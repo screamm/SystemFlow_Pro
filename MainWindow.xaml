@@ -1,0 +1,124 @@
+<Window x:Class="SystemMonitorApp.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="System Monitor - Fläktar &amp; Prestanda" Height="700" Width="900"
+        WindowStartupLocation="CenterScreen"
+        Background="#1e1e1e"
+        Foreground="White">
+    
+    <Window.Resources>
+        <Style TargetType="TextBlock">
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+        
+        <Style TargetType="Border">
+            <Setter Property="Background" Value="#2d2d2d"/>
+            <Setter Property="BorderBrush" Value="#404040"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Padding" Value="10"/>
+        </Style>
+        
+        <Style TargetType="Button">
+            <Setter Property="Background" Value="#0078d4"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="10,5"/>
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="Cursor" Value="Hand"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <Border Grid.Row="0" Background="#0078d4">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="🖥️ System Monitor" FontSize="16" FontWeight="Bold" Margin="10"/>
+                <Button Content="Uppdatera" Click="RefreshButton_Click" Margin="10,5"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Main Content -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid Margin="10">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="*"/>
+                </Grid.RowDefinitions>
+
+                <!-- CPU Usage -->
+                <Border Grid.Row="0" Grid.Column="0">
+                    <StackPanel>
+                        <TextBlock Text="💻 CPU Användning" FontWeight="Bold" FontSize="14" Foreground="#4CAF50"/>
+                        <TextBlock Name="CpuUsageText" Text="Laddar..." FontSize="16" Foreground="#4CAF50"/>
+                        <TextBlock Text="CPU Kärnor:" FontWeight="Bold" Margin="0,10,0,5"/>
+                        <TextBlock Name="CpuCoresText" Text="Laddar..." FontSize="10" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Memory Usage -->
+                <Border Grid.Row="0" Grid.Column="1">
+                    <StackPanel>
+                        <TextBlock Text="🧠 Minne" FontWeight="Bold" FontSize="14" Foreground="#2196F3"/>
+                        <TextBlock Name="MemoryText" Text="Laddar..." FontSize="14" Foreground="#2196F3"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Temperature -->
+                <Border Grid.Row="1" Grid.Column="0">
+                    <StackPanel>
+                        <TextBlock Text="🌡️ Temperaturer" FontWeight="Bold" FontSize="14" Foreground="#FF9800"/>
+                        <TextBlock Name="TemperatureText" Text="Laddar..." FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Fans -->
+                <Border Grid.Row="1" Grid.Column="1">
+                    <StackPanel>
+                        <TextBlock Text="🌀 Fläktar" FontWeight="Bold" FontSize="14" Foreground="#E91E63"/>
+                        <TextBlock Name="FanText" Text="Laddar..." FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- System Info -->
+                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
+                    <StackPanel>
+                        <TextBlock Text="ℹ️ System Information" FontWeight="Bold" FontSize="14" Foreground="#9C27B0"/>
+                        <TextBlock Name="SystemInfoText" Text="Laddar..." FontSize="11" TextWrapping="Wrap"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Status -->
+                <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Bottom">
+                    <StackPanel>
+                        <TextBlock Text="📊 Status" FontWeight="Bold" FontSize="14" Foreground="#607D8B"/>
+                        <TextBlock Name="StatusText" Text="Redo - Uppdaterar varje sekund" FontSize="10" Foreground="#607D8B"/>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </ScrollViewer>
+
+        <!-- Footer -->
+        <Border Grid.Row="2" Background="#2d2d2d" BorderThickness="0,1,0,0">
+            <TextBlock Text="Systemmonitor för Windows 11 - Kräver administratörsrättigheter för full funktionalitet" 
+                       FontSize="10" Foreground="#888" HorizontalAlignment="Center" Margin="5"/>
+        </Border>
+    </Grid>
+</Window> 

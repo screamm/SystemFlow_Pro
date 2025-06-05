@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "bcEWP5wstv8=",
+  "success": true,
+  "projectFilePath": "C:\\Users\\david\\Documents\\FSU23D\\Egna Projekt\\FannyKnob\\SystemMonitorApp.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\david\\.nuget\\packages\\system.codedom\\7.0.0\\system.codedom.7.0.0.nupkg.sha512",
+    "C:\\Users\\david\\.nuget\\packages\\system.management\\7.0.2\\system.management.7.0.2.nupkg.sha512"
+  ],
+  "logs": []
+}
