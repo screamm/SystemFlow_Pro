@@ -44,9 +44,13 @@
         "net9.0-windows7.0": {
           "targetAlias": "net9.0-windows",
           "dependencies": {
+            "LibreHardwareMonitorLib": {
+              "target": "Package",
+              "version": "[0.9.4, )"
+            },
             "System.Management": {
               "target": "Package",
-              "version": "[7.0.2, )"
+              "version": "[9.0.0, )"
             }
           },
           "imports": [

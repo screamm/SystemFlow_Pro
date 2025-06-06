@@ -5,6 +5,7 @@ using System.Management;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
+using LibreHardwareMonitor.Hardware;
 
 namespace SystemMonitorApp
 {
@@ -15,6 +16,7 @@ namespace SystemMonitorApp
         private List<PerformanceCounter> _cpuCoreCounters;
         private PerformanceCounter _gpuCounter;
         private PerformanceCounter _memoryCounter;
+        private Computer computer;
 
         public MainWindow()
         {
@@ -51,10 +53,25 @@ namespace SystemMonitorApp
                     counter.NextValue();
                 }
                 _memoryCounter.NextValue();
+
+                // Initiera LibreHardwareMonitor
+                computer = new Computer
+                {
+                    IsCpuEnabled = true,
+                    IsGpuEnabled = true,
+                    IsMemoryEnabled = true,
+                    IsMotherboardEnabled = true,
+                    IsControllerEnabled = true,
+                    IsNetworkEnabled = true,
+                    IsStorageEnabled = true
+                };
+                
+                computer.Open();
+                computer.Accept(new UpdateVisitor());
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error initializing performance counters: {ex.Message}");
+                MessageBox.Show($"Kunde inte initiera systemräknare: {ex.Message}", "Fel", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
 
@@ -110,54 +127,78 @@ namespace SystemMonitorApp
                     string tempInfo = "";
                     string fanInfo = "";
 
-                    // Get temperature data using WMI
-                    using (var searcher = new ManagementObjectSearcher(@"root\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature"))
+                    // Använd LibreHardwareMonitor för exakt hårdvarudata
+                    computer.Accept(new UpdateVisitor());
+                    
+                    foreach (IHardware hardware in computer.Hardware)
                     {
-                        foreach (ManagementObject obj in searcher.Get())
+                        foreach (ISensor sensor in hardware.Sensors)
                         {
-                            double temp = Convert.ToDouble(obj["CurrentTemperature"]);
-                            // Convert from tenths of Kelvin to Celsius
-                            temp = (temp - 2732) / 10.0;
-                            tempInfo += $"Thermal Zone: {temp:F1}°C\n";
-                        }
-                    }
-
-                    // Try to get GPU info
-                    using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_VideoController"))
-                    {
-                        foreach (ManagementObject obj in searcher.Get())
-                        {
-                            string name = obj["Name"]?.ToString();
-                            if (!string.IsNullOrEmpty(name))
+                            // Temperatursensorer
+                            if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
                             {
-                                tempInfo += $"GPU: {name}\n";
+                                string tempName = $"{hardware.Name} - {sensor.Name}";
+                                tempInfo += $"{tempName}: {sensor.Value.Value:F1}°C\n";
+                            }
+                            
+                            // Fläktsensorer
+                            if (sensor.SensorType == SensorType.Fan && sensor.Value.HasValue)
+                            {
+                                string fanName = $"{hardware.Name} - {sensor.Name}";
+                                fanInfo += $"{fanName}: {sensor.Value.Value:F0} RPM\n";
+                            }
+                        }
+                        
+                        // Kontrollera även sub-hårdvara
+                        foreach (IHardware subHardware in hardware.SubHardware)
+                        {
+                            foreach (ISensor sensor in subHardware.Sensors)
+                            {
+                                if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
+                                {
+                                    string tempName = $"{subHardware.Name} - {sensor.Name}";
+                                    tempInfo += $"{tempName}: {sensor.Value.Value:F1}°C\n";
+                                }
+                                
+                                if (sensor.SensorType == SensorType.Fan && sensor.Value.HasValue)
+                                {
+                                    string fanName = $"{subHardware.Name} - {sensor.Name}";
+                                    fanInfo += $"{fanName}: {sensor.Value.Value:F0} RPM\n";
+                                }
                             }
                         }
                     }
 
-                    // Try to get fan information
-                    using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Fan"))
+                    // Fallback till WMI för temperatur om LibreHardwareMonitor inte ger resultat
+                    if (string.IsNullOrEmpty(tempInfo))
                     {
-                        foreach (ManagementObject obj in searcher.Get())
+                        try
                         {
-                            string name = obj["Name"]?.ToString();
-                            string speed = obj["DesiredSpeed"]?.ToString();
-                            fanInfo += $"Fan: {name} - Speed: {speed ?? "N/A"}\n";
+                            using (var searcher = new ManagementObjectSearcher(@"root\WMI", "SELECT * FROM MSAcpi_ThermalZoneTemperature"))
+                            {
+                                foreach (ManagementObject obj in searcher.Get())
+                                {
+                                    double temp = Convert.ToDouble(obj["CurrentTemperature"]);
+                                    temp = (temp - 2732) / 10.0;
+                                    tempInfo += $"Thermal Zone: {temp:F1}°C\n";
+                                }
+                            }
                         }
+                        catch { }
                     }
 
                     // Update UI on main thread
                     Dispatcher.Invoke(() =>
                     {
-                        TemperatureText.Text = string.IsNullOrEmpty(tempInfo) ? "Temperature data not available" : tempInfo;
-                        FanText.Text = string.IsNullOrEmpty(fanInfo) ? "Fan data not available" : fanInfo;
+                        TemperatureText.Text = string.IsNullOrEmpty(tempInfo) ? "Temperaturdata ej tillgänglig" : tempInfo;
+                        FanText.Text = string.IsNullOrEmpty(fanInfo) ? "Fläktdata ej tillgänglig" : fanInfo;
                     });
                 }
                 catch (Exception ex)
                 {
                     Dispatcher.Invoke(() =>
                     {
-                        StatusText.Text = $"Hardware info error: {ex.Message}";
+                        StatusText.Text = $"Hårdvarufel: {ex.Message}";
                     });
                 }
             });
@@ -210,13 +251,41 @@ namespace SystemMonitorApp
             LoadSystemInfo();
         }
 
-        private void Window_Closing(object sender, System.ComponentModel.CancelEventArgs e)
+
+
+        protected override void OnClosed(EventArgs e)
         {
-            _timer?.Stop();
-            _cpuCounter?.Dispose();
-            _cpuCoreCounters?.ForEach(c => c.Dispose());
-            _gpuCounter?.Dispose();
-            _memoryCounter?.Dispose();
+            try
+            {
+                _timer?.Stop();
+                _cpuCounter?.Dispose();
+                _cpuCoreCounters?.ForEach(c => c.Dispose());
+                _gpuCounter?.Dispose();
+                _memoryCounter?.Dispose();
+                computer?.Close();
+            }
+            catch { }
+            
+            base.OnClosed(e);
         }
+    }
+
+    // UpdateVisitor klass för LibreHardwareMonitor
+    public class UpdateVisitor : IVisitor
+    {
+        public void VisitComputer(IComputer computer)
+        {
+            computer.Traverse(this);
+        }
+        
+        public void VisitHardware(IHardware hardware)
+        {
+            hardware.Update();
+            foreach (IHardware subHardware in hardware.SubHardware)
+                subHardware.Accept(this);
+        }
+        
+        public void VisitSensor(ISensor sensor) { }
+        public void VisitParameter(IParameter parameter) { }
     }
 } 
