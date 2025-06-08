@@ -1,2 +1,0 @@
-C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-true-single\SystemMonitorApp.pdb
-C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-true-single\SystemMonitorApp.exe
