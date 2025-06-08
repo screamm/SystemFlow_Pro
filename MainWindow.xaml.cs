@@ -70,7 +70,7 @@ namespace SystemMonitorApp
                 }
                 _memoryCounter.NextValue();
 
-                // Initiera LibreHardwareMonitor
+                // Initiera LibreHardwareMonitor - aktivera alla möjliga hårdvarutyper
                 computer = new Computer
                 {
                     IsCpuEnabled = true,
@@ -79,7 +79,9 @@ namespace SystemMonitorApp
                     IsMotherboardEnabled = true,
                     IsControllerEnabled = true,
                     IsNetworkEnabled = true,
-                    IsStorageEnabled = true
+                    IsStorageEnabled = true,
+                    IsPsuEnabled = true,
+                    IsBatteryEnabled = true
                 };
                 
                 computer.Open();
@@ -379,24 +381,30 @@ namespace SystemMonitorApp
                     }
                     
                     // Categorize fans
-                    if (fan.Key.ToLower().Contains("cpu"))
+                    if (fan.Key.ToLower().Contains("gpu") || 
+                        fan.Key.ToLower().Contains("nvidia") ||
+                        fan.Key.ToLower().Contains("geforce") ||
+                        fan.Key.ToLower().Contains("radeon"))
                     {
-                        CpuFansPanel.Children.Add(fanText);
+                        // GPU fans go to SystemFansPanel (now labeled as GPU-FLÄKTAR)
+                        SystemFansPanel.Children.Add(fanText);
                     }
                     else
                     {
-                        SystemFansPanel.Children.Add(fanText);
+                        // All other fans (CPU + System fans like IT8689E) go to CPU section
+                        CpuFansPanel.Children.Add(fanText);
                     }
                 }
                 
-                // Add fallback if no fans found
+                // Add informative message if no real fans found
                 if (CpuFansPanel.Children.Count == 0)
                 {
                     CpuFansPanel.Children.Add(new TextBlock
                     {
-                        Text = "Inga CPU-fläktar hittades",
+                        Text = "Inga CPU/system-fläktar detekterade\n\nTroliga orsaker:\n• Moderkortet exponerar inte RPM-data\n• Fläktar anslutna direkt till PSU\n• Behöver administratörsbehörighet",
                         Style = (Style)FindResource("DataText"),
-                        Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
+                        Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
+                        TextWrapping = TextWrapping.Wrap
                     });
                 }
                 
@@ -404,9 +412,10 @@ namespace SystemMonitorApp
                 {
                     SystemFansPanel.Children.Add(new TextBlock
                     {
-                        Text = "Inga systemfläktar hittades",
+                        Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt om:\n• GPU-fläktar ej exponerade av drivrutin\n• LibreHardwareMonitor ej stöder ditt grafikkort\n• Passiv kylning eller inaktiva fläktar",
                         Style = (Style)FindResource("DataText"),
-                        Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
+                        Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
+                        TextWrapping = TextWrapping.Wrap
                     });
                 }
             }
@@ -643,32 +652,51 @@ namespace SystemMonitorApp
                             if (sensor.SensorType == SensorType.Fan)
                             {
                                 string name = $"{hardware.Name} {sensor.Name}";
-                                // Include fans even if they report 0 or null values
+                                float fanSpeed = sensor.Value ?? 0f;
+                                
+                                // Include all fan sensors, even if 0 RPM - to see what's detected
+                                fans[name] = fanSpeed;
+                            }
+                            // Also check for Control sensors that might be fan-related
+                            else if (sensor.SensorType == SensorType.Control && 
+                                    (sensor.Name.ToLower().Contains("fan") || 
+                                     sensor.Name.ToLower().Contains("pump")))
+                            {
+                                string name = $"{hardware.Name} {sensor.Name}";
                                 float fanSpeed = sensor.Value ?? 0f;
                                 fans[name] = fanSpeed;
+                            }
+                        }
+                        
+                        // Check sub-hardware (like CPU packages, etc.)
+                        foreach (var subHardware in hardware.SubHardware)
+                        {
+                            foreach (var sensor in subHardware.Sensors)
+                            {
+                                if (sensor.SensorType == SensorType.Fan)
+                                {
+                                    string name = $"{subHardware.Name} {sensor.Name}";
+                                    float fanSpeed = sensor.Value ?? 0f;
+                                    fans[name] = fanSpeed;
+                                }
+                                else if (sensor.SensorType == SensorType.Control && 
+                                        (sensor.Name.ToLower().Contains("fan") || 
+                                         sensor.Name.ToLower().Contains("pump")))
+                                {
+                                    string name = $"{subHardware.Name} {sensor.Name}";
+                                    float fanSpeed = sensor.Value ?? 0f;
+                                    fans[name] = fanSpeed;
+                                }
                             }
                         }
                     }
                 }
                 
-                // Add some realistic simulated data if very few fans found
-                if (fans.Count < 3)
-                {
-                    var random = new Random();
-                    fans["CPU Fan"] = 1200f + (float)(random.NextDouble() * 800);
-                    fans["System Fan 1"] = 800f + (float)(random.NextDouble() * 600);
-                    fans["System Fan 2"] = 900f + (float)(random.NextDouble() * 500);
-                    fans["GPU Fan 1"] = 1500f + (float)(random.NextDouble() * 1000);
-                    fans["GPU Fan 2"] = 1400f + (float)(random.NextDouble() * 1000);
-                }
+                // No debug info - just return what we found
             }
             catch
             {
-                var random = new Random();
-                fans["CPU Fan"] = 1200f;
-                fans["System Fan"] = 800f;
-                fans["GPU Fan 1"] = 1500f + (float)(random.NextDouble() * 500);
-                fans["GPU Fan 2"] = 1400f + (float)(random.NextDouble() * 500);
+                // Return empty on error
             }
             
             return fans;

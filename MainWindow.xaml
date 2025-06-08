@@ -347,7 +347,7 @@
                          <StackPanel x:Name="GpuInfoPanel" Margin="0,0,0,16"/>
                      </ScrollViewer>
 
-                                         <TextBlock Text="💨 SYSTEMFLÄKTAR" Style="{StaticResource SectionHeader}" Margin="0,24,0,0"/>
+                                         <TextBlock Text="🎮 GPU-FLÄKTAR" Style="{StaticResource SectionHeader}" Margin="0,24,0,0"/>
                      <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
                          <StackPanel x:Name="SystemFansPanel"/>
                      </ScrollViewer>
