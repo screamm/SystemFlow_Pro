@@ -34,6 +34,12 @@ En elegant realtidsapplikation för övervakning av systemresurser med professio
 
 ### Installation
 
+#### 📦 **Alternativ 1: Färdig exe-fil (Enklast)**
+1. **Ladda ner** `publish-with-icon/SystemMonitorApp.exe`
+2. **Högerklicka** → "Kör som administratör"  
+3. **Acceptera UAC-prompten**
+
+#### 🔧 **Alternativ 2: Bygg från källkod**
 1. **Klona repository**
    ```bash
    git clone <repository-url>
@@ -50,7 +56,7 @@ En elegant realtidsapplikation för övervakning av systemresurser med professio
    Start-Process -FilePath ".\bin\Debug\net9.0-windows\SystemMonitorApp.exe"
    ```
 
-> 💡 **Tips:** Applikationen begär automatiskt administratörsbehörighet för optimal hårdvaruåtkomst
+> 💡 **Tips:** Den färdiga exe-filen (122MB) innehåller allt och kräver inte .NET installation
 
 ---
 
@@ -99,6 +105,15 @@ En elegant realtidsapplikation för övervakning av systemresurser med professio
 ```bash
 # Använd specifik dotnet-sökväg om standard inte fungerar
 & "C:\Program Files\dotnet\dotnet.exe" build SystemMonitorApp.csproj
+```
+
+**Skapa egen packad exe-fil:**
+```bash
+# Skapa ikon först (om du vill ändra den)
+powershell -ExecutionPolicy Bypass -File "create_icon.ps1"
+
+# Skapa självständig exe-fil med ikon
+& "C:\Program Files\dotnet\dotnet.exe" publish SystemMonitorApp.csproj -c Release -r win-x64 --self-contained -p:PublishSingleFile=true -o publish
 ```
 
 ---

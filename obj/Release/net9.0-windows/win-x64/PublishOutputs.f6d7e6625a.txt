@@ -1,0 +1,9 @@
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\SystemMonitorApp.pdb
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\D3DCompiler_47_cor3.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\PenImc_cor3.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\PresentationNative_cor3.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\vcruntime140_cor3.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\wpfgfx_cor3.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\MonoPosixHelper.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\libMonoPosixHelper.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\publish-with-icon\SystemMonitorApp.exe
