@@ -1,392 +1,568 @@
 <Window x:Class="SystemMonitorApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="System Monitor - Advanced Dashboard" Height="950" Width="1400"
+        Title="NeuroFlow - System Monitor" Height="1080" Width="1920"
         WindowStartupLocation="CenterScreen"
-        Background="{StaticResource DarkBrush}"
-        FontFamily="Segoe UI">
+        Background="#FF0A0A0F"
+        WindowStyle="None"
+        ResizeMode="CanResize"
+        AllowsTransparency="True">
 
     <Window.Resources>
-        <!-- Fade In Animation -->
-        <Storyboard x:Key="FadeInAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5"/>
-        </Storyboard>
-        
-        <!-- Progress Bar Animation -->
-        <Storyboard x:Key="ProgressAnimation">
-            <DoubleAnimation Storyboard.TargetProperty="Value" Duration="0:0:0.3">
-                <DoubleAnimation.EasingFunction>
-                    <CubicEase EasingMode="EaseOut"/>
-                </DoubleAnimation.EasingFunction>
-            </DoubleAnimation>
+        <!-- Modern Color Palette -->
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#0A0A0F"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#1A1A2E"/>
+        <SolidColorBrush x:Key="GlassBrush" Color="#16213E"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#00D4AA"/>
+        <SolidColorBrush x:Key="SecondaryBrush" Color="#A855F7"/>
+        <SolidColorBrush x:Key="WarnBrush" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="ErrorBrush" Color="#EF4444"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#9CA3AF"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#6B7280"/>
+
+        <!-- Glassmorphic Card Style -->
+        <Style x:Key="GlassCard" TargetType="Border">
+            <Setter Property="Background">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1" Opacity="0.1">
+                        <GradientStop Color="#FFFFFF" Offset="0"/>
+                        <GradientStop Color="#A855F7" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderBrush">
+                <Setter.Value>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1" Opacity="0.2">
+                        <GradientStop Color="#FFFFFF" Offset="0"/>
+                        <GradientStop Color="#A855F7" Offset="1"/>
+                    </LinearGradientBrush>
+                </Setter.Value>
+            </Setter>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="CornerRadius" Value="24"/>
+            <Setter Property="Effect">
+                <Setter.Value>
+                    <DropShadowEffect Color="#000000" BlurRadius="32" ShadowDepth="0" Opacity="0.3"/>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Hero Metric Style -->
+        <Style x:Key="HeroMetric" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable Display"/>
+            <Setter Property="FontSize" Value="32"/>
+            <Setter Property="FontWeight" Value="Light"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimaryBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+
+        <!-- Metric Label Style -->
+        <Style x:Key="MetricLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Margin" Value="0,8,0,0"/>
+        </Style>
+
+        <!-- Breathing Animation -->
+        <Storyboard x:Key="BreathingAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.6" To="1.0" Duration="0:0:2" AutoReverse="True"/>
         </Storyboard>
 
-        <!-- Pulse Animation for Live Indicator -->
+        <!-- Pulse Animation -->
         <Storyboard x:Key="PulseAnimation" RepeatBehavior="Forever">
-            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.5" To="1" Duration="0:0:1" AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleX)" From="1.0" To="1.05" Duration="0:0:1.5" AutoReverse="True"/>
+            <DoubleAnimation Storyboard.TargetProperty="(UIElement.RenderTransform).(ScaleTransform.ScaleY)" From="1.0" To="1.05" Duration="0:0:1.5" AutoReverse="True"/>
         </Storyboard>
     </Window.Resources>
 
-    <Window.Triggers>
-        <EventTrigger RoutedEvent="Window.Loaded">
-            <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
-        </EventTrigger>
-    </Window.Triggers>
-
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="80"/>
+            <RowDefinition Height="140"/>
             <RowDefinition Height="*"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="60"/>
         </Grid.RowDefinitions>
-        
-        <!-- Modern Header -->
-        <Border Grid.Row="0" Background="{StaticResource DarkSecondaryBrush}" Padding="24,16">
-            <Grid>
+
+        <!-- Header -->
+        <Border Grid.Row="0" Background="Transparent">
+            <Grid Margin="32,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                
+
+                <!-- Logo & Title -->
                 <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Ellipse Width="40" Height="40" Fill="{StaticResource PrimaryBrush}" Margin="0,0,16,0">
-                        <Ellipse.Effect>
-                            <DropShadowEffect Color="{Binding Source={StaticResource PrimaryBrush}, Path=Color}" 
-                                              BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
-                        </Ellipse.Effect>
+                    <Ellipse Width="32" Height="32" Margin="0,0,16,0">
+                        <Ellipse.Fill>
+                            <RadialGradientBrush>
+                                <GradientStop Color="#00D4AA" Offset="0"/>
+                                <GradientStop Color="#A855F7" Offset="1"/>
+                            </RadialGradientBrush>
+                        </Ellipse.Fill>
                     </Ellipse>
-                    <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="System Monitor" FontSize="24" FontWeight="Bold" 
-                                   Foreground="{StaticResource LightTextBrush}"/>
-                        <TextBlock Text="Advanced Dashboard för Realtidsövervakning" FontSize="12" 
-                                   Foreground="{StaticResource SecondaryTextBrush}"/>
-                    </StackPanel>
+                    <TextBlock Text="NeuroFlow" FontFamily="Segoe UI Variable Display" FontSize="24" FontWeight="SemiBold" 
+                               Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
+                    <TextBlock Text="System Monitor" FontFamily="Segoe UI Variable" FontSize="14" FontWeight="Normal" 
+                               Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="16,0,0,0"/>
                 </StackPanel>
-                
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
-                    <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" Margin="0,0,8,0" x:Name="LiveIndicator">
-                        <Ellipse.Effect>
-                            <DropShadowEffect Color="{Binding Source={StaticResource SuccessBrush}, Path=Color}" 
-                                              BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
-                        </Ellipse.Effect>
+
+                <!-- Live Indicator -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,24,0">
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource AccentBrush}" x:Name="LiveIndicator">
                         <Ellipse.Triggers>
                             <EventTrigger RoutedEvent="Ellipse.Loaded">
-                                <BeginStoryboard Storyboard="{StaticResource PulseAnimation}"/>
+                                <BeginStoryboard Storyboard="{StaticResource BreathingAnimation}"/>
                             </EventTrigger>
                         </Ellipse.Triggers>
                     </Ellipse>
-                    <TextBlock Text="Live" FontSize="12" Foreground="{StaticResource SuccessBrush}" 
-                               FontWeight="Medium" VerticalAlignment="Center"/>
+                    <TextBlock Text="LIVE" FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Bold" 
+                               Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                 </StackPanel>
-                
-                <Button Grid.Column="2" Content="🔄 Uppdatera" Click="RefreshButton_Click" 
-                        Style="{StaticResource ModernButton}"/>
+
+                <!-- Window Controls -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="−" Width="32" Height="32" Background="Transparent" Foreground="{StaticResource TextSecondaryBrush}" 
+                            BorderThickness="0" FontSize="20" Click="MinimizeButton_Click"/>
+                    <Button Content="⛶" Width="32" Height="32" Background="Transparent" Foreground="{StaticResource TextSecondaryBrush}" 
+                            BorderThickness="0" FontSize="16" Click="MaximizeButton_Click"/>
+                    <Button Content="✕" Width="32" Height="32" Background="Transparent" Foreground="{StaticResource ErrorBrush}" 
+                            BorderThickness="0" FontSize="16" Click="CloseButton_Click"/>
+                </StackPanel>
             </Grid>
         </Border>
 
-        <!-- Main Dashboard -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,16">
-            <Grid>
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="Auto"/>
-                </Grid.RowDefinitions>
+        <!-- Hero Metrics -->
+        <Grid Grid.Row="1" Margin="32,8,32,8" Height="120">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
 
-                <!-- Core Metrics Row -->
-                <Grid Grid.Row="0" Margin="0,0,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- CPU Card -->
+            <Border Grid.Column="0" Style="{StaticResource GlassCard}" Margin="8" x:Name="CpuCard">
+                <Border.RenderTransform>
+                    <ScaleTransform/>
+                </Border.RenderTransform>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- CPU Usage Card -->
-                    <Border Grid.Column="0" Style="{StaticResource ModernCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="💻 CPU Prestanda" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource SuccessBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
-                            
-                            <TextBlock Name="CpuUsageText" Text="0%" Style="{StaticResource MetricText}"
-                                       Foreground="{StaticResource SuccessBrush}"/>
-                            
-                            <ProgressBar Name="CpuProgressBar" Style="{StaticResource ModernProgressBar}" 
-                                         Maximum="100" Value="0"/>
-                            
-                            <TextBlock Text="Total CPU-belastning" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
-                            <TextBlock Name="CpuCoresText" Text="Laddar kärndata..." Style="{StaticResource DetailText}" MaxHeight="80"/>
-                        </StackPanel>
+                    <!-- CPU Icon Background -->
+                    <Border Grid.Row="0" Background="Transparent" VerticalAlignment="Top" HorizontalAlignment="Right" 
+                            Width="48" Height="48" Margin="12">
+                        <TextBlock Text="⚡" FontSize="28" Foreground="{StaticResource AccentBrush}" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.3"/>
                     </Border>
 
-                    <!-- GPU Card -->
-                    <Border Grid.Column="1" Style="{StaticResource ModernCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="🎮 Grafikkort" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource SecondaryBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
-                            
-                            <TextBlock Name="GpuUsageText" Text="N/A" Style="{StaticResource MetricText}"
-                                       Foreground="{StaticResource SecondaryBrush}"/>
-                            
-                            <ProgressBar Name="GpuProgressBar" Style="{StaticResource ModernProgressBar}" 
-                                         Maximum="100" Value="0"/>
-                            
-                            <TextBlock Text="GPU-belastning" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
-                            <TextBlock Name="GpuDetailsText" Text="Laddar GPU-data..." Style="{StaticResource DetailText}"/>
-                        </StackPanel>
-                    </Border>
+                    <!-- CPU Value -->
+                    <TextBlock Grid.Row="1" x:Name="CpuValueText" Text="0%" Style="{StaticResource HeroMetric}">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#00D4AA" Offset="0"/>
+                                <GradientStop Color="#22C55E" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
 
-                    <!-- Memory Card -->
-                    <Border Grid.Column="2" Style="{StaticResource ModernCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="🧠 Systemminne" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource AccentBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
-                            
-                            <TextBlock Name="MemoryText" Text="0 GB" Style="{StaticResource MetricText}"
-                                       Foreground="{StaticResource AccentBrush}"/>
-                            
-                            <ProgressBar Name="MemoryProgressBar" Style="{StaticResource ModernProgressBar}" 
-                                         Maximum="100" Value="0"/>
-                            
-                            <TextBlock Text="Tillgängligt minne" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
-                            <TextBlock Name="MemoryDetailsText" Text="Laddar minnesdata..." Style="{StaticResource DetailText}"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Temperature Card -->
-                    <Border Grid.Column="3" Style="{StaticResource ModernCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="🌡️ Temperaturer" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource WarningBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
-                            
-                            <TextBlock Name="TemperatureMainText" Text="0°C" Style="{StaticResource MetricText}"
-                                       Foreground="{StaticResource WarningBrush}"/>
-                            
-                            <ProgressBar Name="TempProgressBar" Style="{StaticResource ModernProgressBar}" 
-                                         Maximum="100" Value="0"/>
-                            
-                            <TextBlock Text="CPU-temperatur" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
-                            <TextBlock Name="TemperatureText" Text="Laddar temperaturdata..." Style="{StaticResource DetailText}" MaxHeight="80"/>
-                        </StackPanel>
-                    </Border>
+                    <!-- CPU Label -->
+                    <TextBlock Grid.Row="2" Text="CPU LOAD" Style="{StaticResource MetricLabel}"/>
                 </Grid>
+            </Border>
 
-                <!-- Hardware Details Row -->
-                <Grid Grid.Row="1" Margin="0,0,0,16">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+            <!-- GPU Card -->
+            <Border Grid.Column="1" Style="{StaticResource GlassCard}" Margin="8" x:Name="GpuCard">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
 
-                    <!-- System Fans -->
-                    <Border Grid.Column="0" Style="{StaticResource ModernCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="🌀 Systemfläktar" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource SecondaryBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
-                            
-                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-                                <TextBlock Name="SystemFanText" Text="Laddar systemfläktdata..." Style="{StaticResource DetailText}"/>
-                            </ScrollViewer>
-                        </StackPanel>
+                    <Border Grid.Row="0" Background="Transparent" VerticalAlignment="Top" HorizontalAlignment="Right" 
+                            Width="48" Height="48" Margin="12">
+                        <TextBlock Text="🎮" FontSize="28" Foreground="{StaticResource SecondaryBrush}" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.3"/>
                     </Border>
 
-                    <!-- CPU Fans -->
-                    <Border Grid.Column="1" Style="{StaticResource ModernCard}">
-                        <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="💨 CPU-fläktar" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource SuccessBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
-                            
-                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-                                <TextBlock Name="CpuFanText" Text="Laddar CPU-fläktdata..." Style="{StaticResource DetailText}"/>
-                            </ScrollViewer>
-                        </StackPanel>
+                    <TextBlock Grid.Row="1" x:Name="GpuValueText" Text="0%" Style="{StaticResource HeroMetric}">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#A855F7" Offset="0"/>
+                                <GradientStop Color="#8B5CF6" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="2" Text="GPU LOAD" Style="{StaticResource MetricLabel}"/>
+                </Grid>
+            </Border>
+
+            <!-- Memory Card -->
+            <Border Grid.Column="2" Style="{StaticResource GlassCard}" Margin="8" x:Name="MemoryCard">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="Transparent" VerticalAlignment="Top" HorizontalAlignment="Right" 
+                            Width="48" Height="48" Margin="12">
+                        <TextBlock Text="💾" FontSize="28" Foreground="{StaticResource AccentBrush}" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.3"/>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" x:Name="MemoryValueText" Text="0%" Style="{StaticResource HeroMetric}">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#06B6D4" Offset="0"/>
+                                <GradientStop Color="#0EA5E9" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="2" Text="MEMORY" Style="{StaticResource MetricLabel}"/>
+                </Grid>
+            </Border>
+
+            <!-- Temperature Card -->
+            <Border Grid.Column="3" Style="{StaticResource GlassCard}" Margin="8" x:Name="TempCard">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <Border Grid.Row="0" Background="Transparent" VerticalAlignment="Top" HorizontalAlignment="Right" 
+                            Width="48" Height="48" Margin="12">
+                        <TextBlock Text="🌡️" FontSize="28" Foreground="{StaticResource WarnBrush}" 
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" Opacity="0.3"/>
+                    </Border>
+
+                    <TextBlock Grid.Row="1" x:Name="TempValueText" Text="0°C" Style="{StaticResource HeroMetric}">
+                        <TextBlock.Foreground>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#F59E0B" Offset="0"/>
+                                <GradientStop Color="#F97316" Offset="1"/>
+                            </LinearGradientBrush>
+                        </TextBlock.Foreground>
+                    </TextBlock>
+
+                    <TextBlock Grid.Row="2" Text="TEMP" Style="{StaticResource MetricLabel}"/>
+                </Grid>
+            </Border>
+        </Grid>
+
+        <!-- Main Content Area -->
+        <Grid Grid.Row="2" Margin="32,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- CPU & Cooling -->
+            <Border Grid.Column="0" Style="{StaticResource GlassCard}" Margin="8,0">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="CPU &amp; COOLING" FontFamily="Segoe UI Variable" FontSize="16" FontWeight="SemiBold" 
+                               Foreground="{StaticResource AccentBrush}" Margin="0,0,0,20"/>
+
+                    <StackPanel Grid.Row="1">
+                        <!-- CPU Cores -->
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                                            <TextBlock Text="CPU CORES" FontFamily="Segoe UI Variable" FontSize="13" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource AccentBrush}"/>
+                                    <TextBlock x:Name="CpuCoreCountText" Text="16 CORES" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Bold" 
+                                               Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <Grid x:Name="CpuCoresGrid">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                        <RowDefinition Height="Auto"/>
+                                    </Grid.RowDefinitions>
+                                    
+                                    <!-- Core indicators will be added programmatically -->
+                                </Grid>
+                                <TextBlock x:Name="CpuCoresText" Text="Loading..." 
+                                           FontFamily="Segoe UI Variable" FontSize="11" FontWeight="Medium"
+                                           Foreground="{StaticResource TextSecondaryBrush}" 
+                                           TextWrapping="Wrap" LineHeight="15" MaxHeight="50" TextTrimming="CharacterEllipsis" Margin="0,8,0,0"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- CPU Fans -->
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="10" Padding="16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="8" Height="8" Fill="{StaticResource AccentBrush}" RadiusX="4" RadiusY="4" Margin="0,2,6,0"/>
+                                                                <TextBlock Text="CPU FANS" FontFamily="Segoe UI Variable" FontSize="13" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource AccentBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="CpuFanStatusText" Text="ACTIVE" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Bold" 
+                                               Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <ScrollViewer MaxHeight="80" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="CpuFanText" Text="Loading..." 
+                                               FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Medium"
+                                               Foreground="{StaticResource TextSecondaryBrush}" 
+                                               TextWrapping="Wrap" LineHeight="18"/>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- GPU & Graphics -->
+            <Border Grid.Column="1" Style="{StaticResource GlassCard}" Margin="8,0">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="GPU &amp; GRAPHICS" FontFamily="Segoe UI Variable" FontSize="16" FontWeight="SemiBold" 
+                               Foreground="{StaticResource SecondaryBrush}" Margin="0,0,0,20"/>
+
+                    <StackPanel Grid.Row="1">
+                                                <!-- GPU Details -->
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="10" Padding="16" Margin="0,0,0,16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,12">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="8" Height="8" Fill="{StaticResource SecondaryBrush}" RadiusX="4" RadiusY="4" Margin="0,2,6,0"/>
+                                        <TextBlock Text="GPU PERFORMANCE" FontFamily="Segoe UI Variable" FontSize="13" FontWeight="SemiBold" 
+                                                   Foreground="{StaticResource SecondaryBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="GpuStatusText" Text="ACTIVE" FontFamily="Segoe UI Variable" FontSize="10" FontWeight="Bold" 
+                                               Foreground="{StaticResource SecondaryBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <!-- GPU Load Bar -->
+                                <Border Background="#20FFFFFF" Height="6" CornerRadius="3" Margin="0,0,0,12">
+                                    <Border x:Name="GpuBar" Background="{StaticResource SecondaryBrush}" 
+                                            HorizontalAlignment="Left" Width="30" Height="6" CornerRadius="3"/>
+                                </Border>
+                                <TextBlock x:Name="GpuDetailsText" Text="Loading..." 
+                                           FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Medium"
+                                           Foreground="{StaticResource TextSecondaryBrush}" 
+                                           TextWrapping="Wrap" LineHeight="18"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- System Fans -->
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="10" Padding="16">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="8" Height="8" Fill="{StaticResource SecondaryBrush}" RadiusX="4" RadiusY="4" Margin="0,2,6,0"/>
+                                                                <TextBlock Text="SYSTEM FANS" FontFamily="Segoe UI Variable" FontSize="13" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource SecondaryBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="SystemFanStatusText" Text="ACTIVE" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Bold" 
+                                               Foreground="{StaticResource SecondaryBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <ScrollViewer MaxHeight="80" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="SystemFanText" Text="Loading..." 
+                                               FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Medium"
+                                               Foreground="{StaticResource TextSecondaryBrush}" 
+                                               TextWrapping="Wrap" LineHeight="18"/>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Memory & Storage -->
+            <Border Grid.Column="2" Style="{StaticResource GlassCard}" Margin="8,0">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="MEMORY &amp; STORAGE" FontFamily="Segoe UI Variable" FontSize="16" FontWeight="SemiBold" 
+                               Foreground="{StaticResource AccentBrush}" Margin="0,0,0,20"/>
+
+                    <StackPanel Grid.Row="1">
+                        <!-- Memory Details -->
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="8" Padding="12" Margin="0,0,0,12">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="8" Height="8" Fill="{StaticResource AccentBrush}" RadiusX="4" RadiusY="4" Margin="0,2,6,0"/>
+                                                                <TextBlock Text="MEMORY USAGE" FontFamily="Segoe UI Variable" FontSize="13" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource AccentBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="MemoryStatusText" Text="NORMAL" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Bold" 
+                                               Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <StackPanel>
+                                    <!-- Memory Bar -->
+                                    <Border Background="#20FFFFFF" Height="4" CornerRadius="2" Margin="0,0,0,8">
+                                        <Border x:Name="MemoryBar" Background="{StaticResource AccentBrush}" 
+                                                HorizontalAlignment="Left" Width="50" Height="4" CornerRadius="2"/>
+                                    </Border>
+                                    <TextBlock x:Name="MemoryDetailsText" Text="Loading..." 
+                                               FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Medium"
+                                               Foreground="{StaticResource TextSecondaryBrush}" 
+                                               TextWrapping="Wrap" LineHeight="18"/>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Thermal Sensors -->
+                        <Border Background="{StaticResource CardBrush}" CornerRadius="8" Padding="12">
+                            <StackPanel>
+                                <Grid Margin="0,0,0,10">
+                                    <StackPanel Orientation="Horizontal">
+                                        <Rectangle Width="8" Height="8" Fill="{StaticResource WarnBrush}" RadiusX="4" RadiusY="4" Margin="0,2,6,0"/>
+                                                                <TextBlock Text="THERMAL SENSORS" FontFamily="Segoe UI Variable" FontSize="13" FontWeight="SemiBold" 
+                                           Foreground="{StaticResource WarnBrush}"/>
+                                    </StackPanel>
+                                    <TextBlock x:Name="ThermalStatusText" Text="NORMAL" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Bold" 
+                                               Foreground="{StaticResource AccentBrush}" HorizontalAlignment="Right"/>
+                                </Grid>
+                                <!-- Temperature Overview -->
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="*"/>
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="CPU" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Medium" 
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="CpuTempText" Text="57°C" FontFamily="Segoe UI Variable" FontSize="14" FontWeight="Bold" 
+                                                   Foreground="{StaticResource WarnBrush}"/>
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1">
+                                        <TextBlock Text="GPU" FontFamily="Segoe UI Variable" FontSize="9" FontWeight="Medium" 
+                                                   Foreground="{StaticResource TextSecondaryBrush}"/>
+                                        <TextBlock x:Name="GpuTempText" Text="45°C" FontFamily="Segoe UI Variable" FontSize="14" FontWeight="Bold" 
+                                                   Foreground="{StaticResource AccentBrush}"/>
+                                    </StackPanel>
+                                </Grid>
+                                <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto">
+                                    <TextBlock x:Name="TemperatureDetailsText" Text="Loading..." 
+                                               FontFamily="Segoe UI Variable" FontSize="11" FontWeight="Medium"
+                                               Foreground="{StaticResource TextSecondaryBrush}" 
+                                               TextWrapping="Wrap" LineHeight="16"/>
+                                </ScrollViewer>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- System Overview -->
+            <Border Grid.Column="3" Style="{StaticResource GlassCard}" Margin="8,0">
+                <Grid Margin="20">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Grid.Row="0" Text="SYSTEM OVERVIEW" FontFamily="Segoe UI Variable" FontSize="16" FontWeight="SemiBold" 
+                               Foreground="{StaticResource AccentBrush}" Margin="0,0,0,20"/>
+
+                    <!-- System Health Indicator -->
+                    <Border Grid.Row="1" Background="{StaticResource CardBrush}" CornerRadius="16" Padding="20" Margin="0,0,0,20">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+
+                            <StackPanel Grid.Column="0">
+                                <TextBlock Text="SYSTEM STATUS" FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Medium" 
+                                           Foreground="{StaticResource TextSecondaryBrush}"/>
+                                <TextBlock x:Name="SystemHealthText" Text="OPTIMAL" FontFamily="Segoe UI Variable" FontSize="24" FontWeight="Bold" 
+                                           Foreground="{StaticResource AccentBrush}" Margin="0,4,0,0"/>
+                            </StackPanel>
+
+                            <Ellipse Grid.Column="1" Width="40" Height="40" x:Name="HealthIndicator">
+                                <Ellipse.Fill>
+                                    <RadialGradientBrush>
+                                        <GradientStop Color="#CC00D4AA" Offset="0"/>
+                                        <GradientStop Color="Transparent" Offset="1"/>
+                                    </RadialGradientBrush>
+                                </Ellipse.Fill>
+                                <Ellipse.RenderTransform>
+                                    <ScaleTransform/>
+                                </Ellipse.RenderTransform>
+                                <Ellipse.Triggers>
+                                    <EventTrigger RoutedEvent="Ellipse.Loaded">
+                                        <BeginStoryboard Storyboard="{StaticResource PulseAnimation}"/>
+                                    </EventTrigger>
+                                </Ellipse.Triggers>
+                            </Ellipse>
+                        </Grid>
                     </Border>
 
                     <!-- System Information -->
-                    <Border Grid.Column="2" Style="{StaticResource ModernCard}">
+                    <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
                         <StackPanel>
-                            <Grid Margin="0,0,0,16">
-                                <TextBlock Text="ℹ️ Hårdvaruinfo" Style="{StaticResource HeaderText}"/>
-                                <Ellipse Width="12" Height="12" Fill="{StaticResource PrimaryBrush}" 
-                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                            </Grid>
+                            <TextBlock Text="HARDWARE INFO" FontFamily="Segoe UI Variable" FontSize="14" FontWeight="Medium" 
+                                       Foreground="{StaticResource TextSecondaryBrush}" Margin="0,0,0,12"/>
                             
-                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
-                                <TextBlock Name="SystemInfoText" Text="Laddar systemdata..." Style="{StaticResource DetailText}"/>
-                            </ScrollViewer>
+                            <TextBlock x:Name="SystemInfoText" Text="Loading system information..." 
+                                       FontFamily="Segoe UI Variable" FontSize="11" 
+                                       Foreground="{StaticResource TextMutedBrush}" 
+                                       TextWrapping="Wrap" LineHeight="16"/>
                         </StackPanel>
-                    </Border>
+                    </ScrollViewer>
                 </Grid>
+            </Border>
+        </Grid>
 
-                <!-- Performance Analytics Row -->
-                <Border Grid.Row="2" Style="{StaticResource ModernCard}" Margin="0,0,0,16">
-                    <StackPanel>
-                        <TextBlock Text="📊 Realtidsanalys" Style="{StaticResource HeaderText}"/>
-                        <Grid Height="140">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
+        <!-- Footer -->
+        <Border Grid.Row="3" Background="Transparent">
+            <Grid Margin="32,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                            <!-- CPU Utilization -->
-                            <Border Grid.Column="0" Background="{StaticResource DarkTertiaryBrush}" 
-                                    CornerRadius="8" Margin="4" Padding="12">
-                                <StackPanel>
-                                    <TextBlock Text="CPU" FontSize="12" Foreground="{StaticResource SuccessBrush}" 
-                                               FontWeight="Medium" HorizontalAlignment="Center"/>
-                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource SuccessBrush}" 
-                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="CpuCircle">
-                                        <Ellipse.Fill>
-                                            <RadialGradientBrush>
-                                                <GradientStop Color="#4010B981" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </RadialGradientBrush>
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Name="CpuMetricText" Text="0%" FontSize="10" 
-                                               Foreground="{StaticResource SuccessBrush}" 
-                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
+                <TextBlock Grid.Column="0" x:Name="StatusText" Text="System Monitor initializing..." 
+                           FontFamily="Segoe UI Variable" FontSize="12" 
+                           Foreground="{StaticResource TextMutedBrush}" 
+                           VerticalAlignment="Center"/>
 
-                            <!-- GPU Utilization -->
-                            <Border Grid.Column="1" Background="{StaticResource DarkTertiaryBrush}" 
-                                    CornerRadius="8" Margin="4" Padding="12">
-                                <StackPanel>
-                                    <TextBlock Text="GPU" FontSize="12" Foreground="{StaticResource SecondaryBrush}" 
-                                               FontWeight="Medium" HorizontalAlignment="Center"/>
-                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource SecondaryBrush}" 
-                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="GpuCircle">
-                                        <Ellipse.Fill>
-                                            <RadialGradientBrush>
-                                                <GradientStop Color="#408B5CF6" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </RadialGradientBrush>
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Name="GpuMetricText" Text="N/A" FontSize="10" 
-                                               Foreground="{StaticResource SecondaryBrush}" 
-                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Memory Usage -->
-                            <Border Grid.Column="2" Background="{StaticResource DarkTertiaryBrush}" 
-                                    CornerRadius="8" Margin="4" Padding="12">
-                                <StackPanel>
-                                    <TextBlock Text="RAM" FontSize="12" Foreground="{StaticResource AccentBrush}" 
-                                               FontWeight="Medium" HorizontalAlignment="Center"/>
-                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource AccentBrush}" 
-                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="RamCircle">
-                                        <Ellipse.Fill>
-                                            <RadialGradientBrush>
-                                                <GradientStop Color="#4006B6D4" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </RadialGradientBrush>
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Name="RamMetricText" Text="0%" FontSize="10" 
-                                               Foreground="{StaticResource AccentBrush}" 
-                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- Temperature Gauge -->
-                            <Border Grid.Column="3" Background="{StaticResource DarkTertiaryBrush}" 
-                                    CornerRadius="8" Margin="4" Padding="12">
-                                <StackPanel>
-                                    <TextBlock Text="TEMP" FontSize="12" Foreground="{StaticResource WarningBrush}" 
-                                               FontWeight="Medium" HorizontalAlignment="Center"/>
-                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource WarningBrush}" 
-                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="TempCircle">
-                                        <Ellipse.Fill>
-                                            <RadialGradientBrush>
-                                                <GradientStop Color="#40F59E0B" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </RadialGradientBrush>
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Name="TempMetricText" Text="0°C" FontSize="10" 
-                                               Foreground="{StaticResource WarningBrush}" 
-                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-
-                            <!-- System Health -->
-                            <Border Grid.Column="4" Background="{StaticResource DarkTertiaryBrush}" 
-                                    CornerRadius="8" Margin="4" Padding="12">
-                                <StackPanel>
-                                    <TextBlock Text="SYSTEM" FontSize="12" Foreground="{StaticResource PrimaryBrush}" 
-                                               FontWeight="Medium" HorizontalAlignment="Center"/>
-                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource PrimaryBrush}" 
-                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="SystemCircle">
-                                        <Ellipse.Fill>
-                                            <RadialGradientBrush>
-                                                <GradientStop Color="#406366F1" Offset="0"/>
-                                                <GradientStop Color="Transparent" Offset="1"/>
-                                            </RadialGradientBrush>
-                                        </Ellipse.Fill>
-                                    </Ellipse>
-                                    <TextBlock Name="SystemHealthText" Text="OK" FontSize="10" 
-                                               Foreground="{StaticResource PrimaryBrush}" 
-                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
-                                </StackPanel>
-                            </Border>
-                        </Grid>
-                    </StackPanel>
-                </Border>
-
-                <!-- Status and Controls -->
-                <Border Grid.Row="3" Style="{StaticResource ModernCard}">
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        
-                        <StackPanel Grid.Column="0">
-                            <TextBlock Text="🔧 Systemstatus & Kontroller" Style="{StaticResource HeaderText}"/>
-                            <TextBlock Name="StatusText" Text="System initialiseras - Samlar realtidsdata..." 
-                                       Style="{StaticResource DetailText}"/>
-                            <TextBlock Name="UpdateTimeText" Text="Uppdateringsintervall: 1 sekund" 
-                                       Style="{StaticResource DetailText}" Margin="0,4,0,0"/>
-                        </StackPanel>
-                    </Grid>
-                </Border>
-            </Grid>
-        </ScrollViewer>
-
-        <!-- Modern Footer -->
-        <Border Grid.Row="2" Background="{StaticResource DarkSecondaryBrush}" 
-                BorderBrush="{StaticResource DarkTertiaryBrush}" BorderThickness="0,1,0,0" Padding="24,12">
-            <Grid>
-                <TextBlock Text="System Monitor v3.0 - Advanced Dashboard med Realtidsanalys | Administratörsrättigheter krävs för fullständig funktionalitet" 
-                           FontSize="11" Foreground="{StaticResource MutedTextBrush}" 
-                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="1" x:Name="UpdateTimeText" Text="Last update: --:--:--" 
+                           FontFamily="Segoe UI Variable" FontSize="12" 
+                           Foreground="{StaticResource TextMutedBrush}" 
+                           VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>
