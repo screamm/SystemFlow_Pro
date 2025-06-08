@@ -806,7 +806,10 @@ namespace SystemMonitorApp
                 
                 // Memory info
                 info += $"Cores: {Environment.ProcessorCount}\n";
-                info += $"OS: {Environment.OSVersion}\n";
+                // Få mer användarvänlig OS-info
+            var os = Environment.OSVersion;
+            var friendlyName = GetFriendlyOSName(os);
+            info += $"OS: {friendlyName} (Build {os.Version.Build})\n";
                 info += $"User: {Environment.UserName}\n";
                 
                 return info;
@@ -830,6 +833,37 @@ namespace SystemMonitorApp
         private void MaximizeButton_Click(object sender, RoutedEventArgs e)
         {
             this.WindowState = this.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
+        }
+
+        private string GetFriendlyOSName(OperatingSystem os)
+        {
+            if (os.Platform == PlatformID.Win32NT)
+            {
+                var version = os.Version;
+                
+                if (version.Major == 10)
+                {
+                    // Windows 11 börjar med build 22000
+                    if (version.Build >= 22000)
+                    {
+                        return "Windows 11";
+                    }
+                    else
+                    {
+                        return "Windows 10";
+                    }
+                }
+                else if (version.Major == 6)
+                {
+                    if (version.Minor == 3) return "Windows 8.1";
+                    if (version.Minor == 2) return "Windows 8";
+                    if (version.Minor == 1) return "Windows 7";
+                }
+                
+                return $"Windows NT {version.Major}.{version.Minor}";
+            }
+            
+            return os.ToString();
         }
 
         private void CloseButton_Click(object sender, RoutedEventArgs e)
