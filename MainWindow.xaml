@@ -1,37 +1,37 @@
 <Window x:Class="SystemMonitorApp.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="System Monitor - Fläktar &amp; Prestanda" Height="700" Width="900"
+        Title="System Monitor - Advanced Dashboard" Height="950" Width="1400"
         WindowStartupLocation="CenterScreen"
-        Background="#1e1e1e"
-        Foreground="White">
-    
+        Background="{StaticResource DarkBrush}"
+        FontFamily="Segoe UI">
+
     <Window.Resources>
-        <Style TargetType="TextBlock">
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="FontFamily" Value="Consolas"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Margin" Value="5"/>
-        </Style>
+        <!-- Fade In Animation -->
+        <Storyboard x:Key="FadeInAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0" To="1" Duration="0:0:0.5"/>
+        </Storyboard>
         
-        <Style TargetType="Border">
-            <Setter Property="Background" Value="#2d2d2d"/>
-            <Setter Property="BorderBrush" Value="#404040"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="CornerRadius" Value="5"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Padding" Value="10"/>
-        </Style>
-        
-        <Style TargetType="Button">
-            <Setter Property="Background" Value="#0078d4"/>
-            <Setter Property="Foreground" Value="White"/>
-            <Setter Property="BorderThickness" Value="0"/>
-            <Setter Property="Padding" Value="10,5"/>
-            <Setter Property="Margin" Value="5"/>
-            <Setter Property="Cursor" Value="Hand"/>
-        </Style>
+        <!-- Progress Bar Animation -->
+        <Storyboard x:Key="ProgressAnimation">
+            <DoubleAnimation Storyboard.TargetProperty="Value" Duration="0:0:0.3">
+                <DoubleAnimation.EasingFunction>
+                    <CubicEase EasingMode="EaseOut"/>
+                </DoubleAnimation.EasingFunction>
+            </DoubleAnimation>
+        </Storyboard>
+
+        <!-- Pulse Animation for Live Indicator -->
+        <Storyboard x:Key="PulseAnimation" RepeatBehavior="Forever">
+            <DoubleAnimation Storyboard.TargetProperty="Opacity" From="0.5" To="1" Duration="0:0:1" AutoReverse="True"/>
+        </Storyboard>
     </Window.Resources>
+
+    <Window.Triggers>
+        <EventTrigger RoutedEvent="Window.Loaded">
+            <BeginStoryboard Storyboard="{StaticResource FadeInAnimation}"/>
+        </EventTrigger>
+    </Window.Triggers>
 
     <Grid>
         <Grid.RowDefinitions>
@@ -40,85 +40,354 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
         
-        <!-- Header -->
-        <Border Grid.Row="0" Background="#0078d4">
-            <StackPanel Orientation="Horizontal">
-                <TextBlock Text="🖥️ System Monitor" FontSize="16" FontWeight="Bold" Margin="10"/>
-                <Button Content="Uppdatera" Click="RefreshButton_Click" Margin="10,5"/>
-            </StackPanel>
-        </Border>
-
-        <!-- Main Content -->
-        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Grid Margin="10">
+        <!-- Modern Header -->
+        <Border Grid.Row="0" Background="{StaticResource DarkSecondaryBrush}" Padding="24,16">
+            <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
-                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Ellipse Width="40" Height="40" Fill="{StaticResource PrimaryBrush}" Margin="0,0,16,0">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="{Binding Source={StaticResource PrimaryBrush}, Path=Color}" 
+                                              BlurRadius="20" ShadowDepth="0" Opacity="0.6"/>
+                        </Ellipse.Effect>
+                    </Ellipse>
+                    <StackPanel VerticalAlignment="Center">
+                        <TextBlock Text="System Monitor" FontSize="24" FontWeight="Bold" 
+                                   Foreground="{StaticResource LightTextBrush}"/>
+                        <TextBlock Text="Advanced Dashboard för Realtidsövervakning" FontSize="12" 
+                                   Foreground="{StaticResource SecondaryTextBrush}"/>
+                    </StackPanel>
+                </StackPanel>
+                
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,0,16,0">
+                    <Ellipse Width="8" Height="8" Fill="{StaticResource SuccessBrush}" Margin="0,0,8,0" x:Name="LiveIndicator">
+                        <Ellipse.Effect>
+                            <DropShadowEffect Color="{Binding Source={StaticResource SuccessBrush}, Path=Color}" 
+                                              BlurRadius="8" ShadowDepth="0" Opacity="0.8"/>
+                        </Ellipse.Effect>
+                        <Ellipse.Triggers>
+                            <EventTrigger RoutedEvent="Ellipse.Loaded">
+                                <BeginStoryboard Storyboard="{StaticResource PulseAnimation}"/>
+                            </EventTrigger>
+                        </Ellipse.Triggers>
+                    </Ellipse>
+                    <TextBlock Text="Live" FontSize="12" Foreground="{StaticResource SuccessBrush}" 
+                               FontWeight="Medium" VerticalAlignment="Center"/>
+                </StackPanel>
+                
+                <Button Grid.Column="2" Content="🔄 Uppdatera" Click="RefreshButton_Click" 
+                        Style="{StaticResource ModernButton}"/>
+            </Grid>
+        </Border>
+
+        <!-- Main Dashboard -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" Padding="24,16">
+            <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
-                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
 
-                <!-- CPU Usage -->
-                <Border Grid.Row="0" Grid.Column="0">
+                <!-- Core Metrics Row -->
+                <Grid Grid.Row="0" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- CPU Usage Card -->
+                    <Border Grid.Column="0" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="💻 CPU Prestanda" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource SuccessBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <TextBlock Name="CpuUsageText" Text="0%" Style="{StaticResource MetricText}"
+                                       Foreground="{StaticResource SuccessBrush}"/>
+                            
+                            <ProgressBar Name="CpuProgressBar" Style="{StaticResource ModernProgressBar}" 
+                                         Maximum="100" Value="0"/>
+                            
+                            <TextBlock Text="Total CPU-belastning" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
+                            <TextBlock Name="CpuCoresText" Text="Laddar kärndata..." Style="{StaticResource DetailText}" MaxHeight="80"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- GPU Card -->
+                    <Border Grid.Column="1" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="🎮 Grafikkort" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource SecondaryBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <TextBlock Name="GpuUsageText" Text="N/A" Style="{StaticResource MetricText}"
+                                       Foreground="{StaticResource SecondaryBrush}"/>
+                            
+                            <ProgressBar Name="GpuProgressBar" Style="{StaticResource ModernProgressBar}" 
+                                         Maximum="100" Value="0"/>
+                            
+                            <TextBlock Text="GPU-belastning" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
+                            <TextBlock Name="GpuDetailsText" Text="Laddar GPU-data..." Style="{StaticResource DetailText}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Memory Card -->
+                    <Border Grid.Column="2" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="🧠 Systemminne" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource AccentBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <TextBlock Name="MemoryText" Text="0 GB" Style="{StaticResource MetricText}"
+                                       Foreground="{StaticResource AccentBrush}"/>
+                            
+                            <ProgressBar Name="MemoryProgressBar" Style="{StaticResource ModernProgressBar}" 
+                                         Maximum="100" Value="0"/>
+                            
+                            <TextBlock Text="Tillgängligt minne" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
+                            <TextBlock Name="MemoryDetailsText" Text="Laddar minnesdata..." Style="{StaticResource DetailText}"/>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Temperature Card -->
+                    <Border Grid.Column="3" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="🌡️ Temperaturer" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource WarningBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <TextBlock Name="TemperatureMainText" Text="0°C" Style="{StaticResource MetricText}"
+                                       Foreground="{StaticResource WarningBrush}"/>
+                            
+                            <ProgressBar Name="TempProgressBar" Style="{StaticResource ModernProgressBar}" 
+                                         Maximum="100" Value="0"/>
+                            
+                            <TextBlock Text="CPU-temperatur" Style="{StaticResource LabelText}" Margin="0,12,0,0"/>
+                            <TextBlock Name="TemperatureText" Text="Laddar temperaturdata..." Style="{StaticResource DetailText}" MaxHeight="80"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Hardware Details Row -->
+                <Grid Grid.Row="1" Margin="0,0,0,16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- System Fans -->
+                    <Border Grid.Column="0" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="🌀 Systemfläktar" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource SecondaryBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Name="SystemFanText" Text="Laddar systemfläktdata..." Style="{StaticResource DetailText}"/>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- CPU Fans -->
+                    <Border Grid.Column="1" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="💨 CPU-fläktar" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource SuccessBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Name="CpuFanText" Text="Laddar CPU-fläktdata..." Style="{StaticResource DetailText}"/>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- System Information -->
+                    <Border Grid.Column="2" Style="{StaticResource ModernCard}">
+                        <StackPanel>
+                            <Grid Margin="0,0,0,16">
+                                <TextBlock Text="ℹ️ Hårdvaruinfo" Style="{StaticResource HeaderText}"/>
+                                <Ellipse Width="12" Height="12" Fill="{StaticResource PrimaryBrush}" 
+                                         HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                            </Grid>
+                            
+                            <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                                <TextBlock Name="SystemInfoText" Text="Laddar systemdata..." Style="{StaticResource DetailText}"/>
+                            </ScrollViewer>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+
+                <!-- Performance Analytics Row -->
+                <Border Grid.Row="2" Style="{StaticResource ModernCard}" Margin="0,0,0,16">
                     <StackPanel>
-                        <TextBlock Text="💻 CPU Användning" FontWeight="Bold" FontSize="14" Foreground="#4CAF50"/>
-                        <TextBlock Name="CpuUsageText" Text="Laddar..." FontSize="16" Foreground="#4CAF50"/>
-                        <TextBlock Text="CPU Kärnor:" FontWeight="Bold" Margin="0,10,0,5"/>
-                        <TextBlock Name="CpuCoresText" Text="Laddar..." FontSize="10" TextWrapping="Wrap"/>
+                        <TextBlock Text="📊 Realtidsanalys" Style="{StaticResource HeaderText}"/>
+                        <Grid Height="140">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- CPU Utilization -->
+                            <Border Grid.Column="0" Background="{StaticResource DarkTertiaryBrush}" 
+                                    CornerRadius="8" Margin="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="CPU" FontSize="12" Foreground="{StaticResource SuccessBrush}" 
+                                               FontWeight="Medium" HorizontalAlignment="Center"/>
+                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource SuccessBrush}" 
+                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="CpuCircle">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#4010B981" Offset="0"/>
+                                                <GradientStop Color="Transparent" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <TextBlock Name="CpuMetricText" Text="0%" FontSize="10" 
+                                               Foreground="{StaticResource SuccessBrush}" 
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- GPU Utilization -->
+                            <Border Grid.Column="1" Background="{StaticResource DarkTertiaryBrush}" 
+                                    CornerRadius="8" Margin="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="GPU" FontSize="12" Foreground="{StaticResource SecondaryBrush}" 
+                                               FontWeight="Medium" HorizontalAlignment="Center"/>
+                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource SecondaryBrush}" 
+                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="GpuCircle">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#408B5CF6" Offset="0"/>
+                                                <GradientStop Color="Transparent" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <TextBlock Name="GpuMetricText" Text="N/A" FontSize="10" 
+                                               Foreground="{StaticResource SecondaryBrush}" 
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Memory Usage -->
+                            <Border Grid.Column="2" Background="{StaticResource DarkTertiaryBrush}" 
+                                    CornerRadius="8" Margin="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="RAM" FontSize="12" Foreground="{StaticResource AccentBrush}" 
+                                               FontWeight="Medium" HorizontalAlignment="Center"/>
+                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource AccentBrush}" 
+                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="RamCircle">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#4006B6D4" Offset="0"/>
+                                                <GradientStop Color="Transparent" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <TextBlock Name="RamMetricText" Text="0%" FontSize="10" 
+                                               Foreground="{StaticResource AccentBrush}" 
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Temperature Gauge -->
+                            <Border Grid.Column="3" Background="{StaticResource DarkTertiaryBrush}" 
+                                    CornerRadius="8" Margin="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="TEMP" FontSize="12" Foreground="{StaticResource WarningBrush}" 
+                                               FontWeight="Medium" HorizontalAlignment="Center"/>
+                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource WarningBrush}" 
+                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="TempCircle">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#40F59E0B" Offset="0"/>
+                                                <GradientStop Color="Transparent" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <TextBlock Name="TempMetricText" Text="0°C" FontSize="10" 
+                                               Foreground="{StaticResource WarningBrush}" 
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- System Health -->
+                            <Border Grid.Column="4" Background="{StaticResource DarkTertiaryBrush}" 
+                                    CornerRadius="8" Margin="4" Padding="12">
+                                <StackPanel>
+                                    <TextBlock Text="SYSTEM" FontSize="12" Foreground="{StaticResource PrimaryBrush}" 
+                                               FontWeight="Medium" HorizontalAlignment="Center"/>
+                                    <Ellipse Width="70" Height="70" Stroke="{StaticResource PrimaryBrush}" 
+                                             StrokeThickness="4" Margin="0,8,0,0" x:Name="SystemCircle">
+                                        <Ellipse.Fill>
+                                            <RadialGradientBrush>
+                                                <GradientStop Color="#406366F1" Offset="0"/>
+                                                <GradientStop Color="Transparent" Offset="1"/>
+                                            </RadialGradientBrush>
+                                        </Ellipse.Fill>
+                                    </Ellipse>
+                                    <TextBlock Name="SystemHealthText" Text="OK" FontSize="10" 
+                                               Foreground="{StaticResource PrimaryBrush}" 
+                                               HorizontalAlignment="Center" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
                     </StackPanel>
                 </Border>
 
-                <!-- Memory Usage -->
-                <Border Grid.Row="0" Grid.Column="1">
-                    <StackPanel>
-                        <TextBlock Text="🧠 Minne" FontWeight="Bold" FontSize="14" Foreground="#2196F3"/>
-                        <TextBlock Name="MemoryText" Text="Laddar..." FontSize="14" Foreground="#2196F3"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Temperature -->
-                <Border Grid.Row="1" Grid.Column="0">
-                    <StackPanel>
-                        <TextBlock Text="🌡️ Temperaturer" FontWeight="Bold" FontSize="14" Foreground="#FF9800"/>
-                        <TextBlock Name="TemperatureText" Text="Laddar..." FontSize="11" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Fans -->
-                <Border Grid.Row="1" Grid.Column="1">
-                    <StackPanel>
-                        <TextBlock Text="🌀 Fläktar" FontWeight="Bold" FontSize="14" Foreground="#E91E63"/>
-                        <TextBlock Name="FanText" Text="Laddar..." FontSize="11" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- System Info -->
-                <Border Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2">
-                    <StackPanel>
-                        <TextBlock Text="ℹ️ System Information" FontWeight="Bold" FontSize="14" Foreground="#9C27B0"/>
-                        <TextBlock Name="SystemInfoText" Text="Laddar..." FontSize="11" TextWrapping="Wrap"/>
-                    </StackPanel>
-                </Border>
-
-                <!-- Status -->
-                <Border Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" VerticalAlignment="Bottom">
-                    <StackPanel>
-                        <TextBlock Text="📊 Status" FontWeight="Bold" FontSize="14" Foreground="#607D8B"/>
-                        <TextBlock Name="StatusText" Text="Redo - Uppdaterar varje sekund" FontSize="10" Foreground="#607D8B"/>
-                    </StackPanel>
+                <!-- Status and Controls -->
+                <Border Grid.Row="3" Style="{StaticResource ModernCard}">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        
+                        <StackPanel Grid.Column="0">
+                            <TextBlock Text="🔧 Systemstatus & Kontroller" Style="{StaticResource HeaderText}"/>
+                            <TextBlock Name="StatusText" Text="System initialiseras - Samlar realtidsdata..." 
+                                       Style="{StaticResource DetailText}"/>
+                            <TextBlock Name="UpdateTimeText" Text="Uppdateringsintervall: 1 sekund" 
+                                       Style="{StaticResource DetailText}" Margin="0,4,0,0"/>
+                        </StackPanel>
+                    </Grid>
                 </Border>
             </Grid>
         </ScrollViewer>
 
-        <!-- Footer -->
-        <Border Grid.Row="2" Background="#2d2d2d" BorderThickness="0,1,0,0">
-            <TextBlock Text="Systemmonitor för Windows 11 - Kräver administratörsrättigheter för full funktionalitet" 
-                       FontSize="10" Foreground="#888" HorizontalAlignment="Center" Margin="5"/>
+        <!-- Modern Footer -->
+        <Border Grid.Row="2" Background="{StaticResource DarkSecondaryBrush}" 
+                BorderBrush="{StaticResource DarkTertiaryBrush}" BorderThickness="0,1,0,0" Padding="24,12">
+            <Grid>
+                <TextBlock Text="System Monitor v3.0 - Advanced Dashboard med Realtidsanalys | Administratörsrättigheter krävs för fullständig funktionalitet" 
+                           FontSize="11" Foreground="{StaticResource MutedTextBrush}" 
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
         </Border>
     </Grid>
 </Window> 

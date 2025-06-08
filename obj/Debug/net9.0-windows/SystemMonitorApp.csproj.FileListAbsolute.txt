@@ -61,3 +61,4 @@ C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\bin\Debug\net9.0-windows\
 C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\bin\Debug\net9.0-windows\runtimes\unix\lib\net9.0\System.IO.Ports.dll
 C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\bin\Debug\net9.0-windows\runtimes\win\lib\net9.0\System.IO.Ports.dll
 C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\bin\Debug\net9.0-windows\runtimes\win\lib\net9.0\System.Management.dll
+C:\Users\david\Documents\FSU23D\Egna Projekt\FannyKnob\obj\Debug\net9.0-windows\App.baml
