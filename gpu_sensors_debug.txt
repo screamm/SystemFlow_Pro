@@ -1,0 +1,166 @@
+GPU Sensor Debug - 2025-06-09 00:19:49
+==================================================
+
+HARDWARE: NVIDIA GeForce RTX 4070 (GpuNvidia)
+  Total Sensors: 32
+  Sensor: GPU Core
+    Type: Temperature
+    Value: 47
+    Identifier: /gpu-nvidia/0/temperature/0
+
+  Sensor: GPU Core
+    Type: Clock
+    Value: 2490
+    Identifier: /gpu-nvidia/0/clock/0
+
+  Sensor: GPU Memory
+    Type: Clock
+    Value: 10501,984
+    Identifier: /gpu-nvidia/0/clock/4
+
+  Sensor: GPU Fan 1
+    Type: Fan
+    Value: 0
+    Identifier: /gpu-nvidia/0/fan/1
+
+  Sensor: GPU Fan 2
+    Type: Fan
+    Value: 0
+    Identifier: /gpu-nvidia/0/fan/2
+
+  Sensor: GPU Fan 1
+    Type: Control
+    Value: 0
+    Identifier: /gpu-nvidia/0/control/1
+
+  Sensor: GPU Fan 2
+    Type: Control
+    Value: 0
+    Identifier: /gpu-nvidia/0/control/2
+
+  Sensor: GPU Core
+    Type: Load
+    Value: 10
+    Identifier: /gpu-nvidia/0/load/0
+
+  Sensor: GPU Memory Controller
+    Type: Load
+    Value: 3
+    Identifier: /gpu-nvidia/0/load/1
+
+  Sensor: GPU Video Engine
+    Type: Load
+    Value: 2
+    Identifier: /gpu-nvidia/0/load/2
+
+  Sensor: GPU Bus
+    Type: Load
+    Value: 0
+    Identifier: /gpu-nvidia/0/load/3
+
+  Sensor: GPU Power
+    Type: Load
+    Value: 19,584
+    Identifier: /gpu-nvidia/0/load/4
+
+  Sensor: GPU Board Power
+    Type: Load
+    Value: 26,618
+    Identifier: /gpu-nvidia/0/load/5
+
+  Sensor: D3D Dedicated Memory Used
+    Type: SmallData
+    Value: 5574,4062
+    Identifier: /gpu-nvidia/0/smalldata/3
+
+  Sensor: D3D Shared Memory Used
+    Type: SmallData
+    Value: 140,9336
+    Identifier: /gpu-nvidia/0/smalldata/4
+
+  Sensor: D3D 3D
+    Type: Load
+    Value: 2,1215663
+    Identifier: /gpu-nvidia/0/load/7
+
+  Sensor: D3D Overlay
+    Type: Load
+    Value: 0
+    Identifier: /gpu-nvidia/0/load/10
+
+  Sensor: D3D Video Decode
+    Type: Load
+    Value: 1,5454426
+    Identifier: /gpu-nvidia/0/load/12
+
+  Sensor: D3D Copy
+    Type: Load
+    Value: 0,98875093
+    Identifier: /gpu-nvidia/0/load/8
+
+  Sensor: D3D Copy
+    Type: Load
+    Value: 0,036853686
+    Identifier: /gpu-nvidia/0/load/9
+
+  Sensor: D3D Security
+    Type: Load
+    Value: 0
+    Identifier: /gpu-nvidia/0/load/11
+
+  Sensor: D3D Video Encode
+    Type: Load
+    Value: 0
+    Identifier: /gpu-nvidia/0/load/13
+
+  Sensor: D3D Video Processing
+    Type: Load
+    Value: 0
+    Identifier: /gpu-nvidia/0/load/14
+
+  Sensor: D3D VR
+    Type: Load
+    Value: 0
+    Identifier: /gpu-nvidia/0/load/15
+
+  Sensor: GPU Hot Spot
+    Type: Temperature
+    Value: 54,21875
+    Identifier: /gpu-nvidia/0/temperature/2
+
+  Sensor: GPU Memory Total
+    Type: SmallData
+    Value: 12282
+    Identifier: /gpu-nvidia/0/smalldata/2
+
+  Sensor: GPU Memory Free
+    Type: SmallData
+    Value: 6452
+    Identifier: /gpu-nvidia/0/smalldata/0
+
+  Sensor: GPU Memory Used
+    Type: SmallData
+    Value: 5829
+    Identifier: /gpu-nvidia/0/smalldata/1
+
+  Sensor: GPU Memory
+    Type: Load
+    Value: 47,46345
+    Identifier: /gpu-nvidia/0/load/3
+
+  Sensor: GPU Package
+    Type: Power
+    Value: 37,841
+    Identifier: /gpu-nvidia/0/power/0
+
+  Sensor: GPU PCIe Rx
+    Type: Throughput
+    Value: 22374400
+    Identifier: /gpu-nvidia/0/throughput/0
+
+  Sensor: GPU PCIe Tx
+    Type: Throughput
+    Value: 8755200
+    Identifier: /gpu-nvidia/0/throughput/1
+
+Debug completed.

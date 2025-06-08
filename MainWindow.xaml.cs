@@ -376,8 +376,18 @@ namespace SystemMonitorApp
                     }
                     else
                     {
-                        fanText.Text = $"⚫ {fan.Key}: Inaktiv";
-                        fanText.Foreground = (SolidColorBrush)FindResource("TextMutedBrush");
+                        // Check if this is a GPU fan that might be in zero RPM mode
+                        if (fan.Key.ToLower().Contains("gpu") && 
+                            (fan.Key.ToLower().Contains("nvidia") || fan.Key.ToLower().Contains("geforce")))
+                        {
+                            fanText.Text = $"❄️ {fan.Key}: Zero RPM Mode";
+                            fanText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
+                        }
+                        else
+                        {
+                            fanText.Text = $"⚫ {fan.Key}: Inaktiv";
+                            fanText.Foreground = (SolidColorBrush)FindResource("TextMutedBrush");
+                        }
                     }
                     
                     // Categorize fans
@@ -412,7 +422,7 @@ namespace SystemMonitorApp
                 {
                     SystemFansPanel.Children.Add(new TextBlock
                     {
-                        Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt om:\n• GPU-fläktar ej exponerade av drivrutin\n• LibreHardwareMonitor ej stöder ditt grafikkort\n• Passiv kylning eller inaktiva fläktar",
+                        Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt om:\n• GPU-fläktar ej exponerade av drivrutin\n• LibreHardwareMonitor ej stöder ditt grafikkort\n• Moderna GPU:er har Zero RPM Mode\n• Passiv kylning eller låg temperatur",
                         Style = (Style)FindResource("DataText"),
                         Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                         TextWrapping = TextWrapping.Wrap
@@ -525,9 +535,9 @@ namespace SystemMonitorApp
             }
             catch
             {
-                return 16.0f; // Default fallback
+                return 0f; // Return 0 if unable to detect memory
             }
-            return 16.0f;
+            return 0f;
         }
 
         private async Task<float> GetGpuUsage()
@@ -555,8 +565,8 @@ namespace SystemMonitorApp
                     }
                 }
                 
-                // Fallback to simulated data
-                return (float)(new Random().NextDouble() * 30 + 10);
+                // No simulated data - return 0 if no real GPU data found
+                return 0f;
             }
             catch
             {
@@ -619,17 +629,11 @@ namespace SystemMonitorApp
                     }
                 }
                 
-                // Add some simulated data if no real data
-                if (temperatures.Count == 0)
-                {
-                    temperatures["CPU"] = 55f + (float)(new Random().NextDouble() * 20);
-                    temperatures["GPU"] = 45f + (float)(new Random().NextDouble() * 25);
-                    temperatures["Motherboard"] = 35f + (float)(new Random().NextDouble() * 15);
-                }
+                // No simulated data - return empty if no real temperatures found
             }
             catch
             {
-                temperatures["Systemtemperatur"] = 50f;
+                // Return empty on error - no fake data
             }
             
             return temperatures;
@@ -647,17 +651,24 @@ namespace SystemMonitorApp
                     
                     foreach (var hardware in computer.Hardware)
                     {
+                        // Force hardware update for GPU specifically
+                        if (hardware.HardwareType == HardwareType.GpuNvidia || 
+                            hardware.HardwareType == HardwareType.GpuAmd ||
+                            hardware.HardwareType == HardwareType.GpuIntel)
+                        {
+                            hardware.Update();
+                        }
+                        
                         foreach (var sensor in hardware.Sensors)
                         {
+                            // Check for Fan sensors
                             if (sensor.SensorType == SensorType.Fan)
                             {
                                 string name = $"{hardware.Name} {sensor.Name}";
                                 float fanSpeed = sensor.Value ?? 0f;
-                                
-                                // Include all fan sensors, even if 0 RPM - to see what's detected
                                 fans[name] = fanSpeed;
                             }
-                            // Also check for Control sensors that might be fan-related
+                            // Check for Control sensors (fans often reported as Control)
                             else if (sensor.SensorType == SensorType.Control && 
                                     (sensor.Name.ToLower().Contains("fan") || 
                                      sensor.Name.ToLower().Contains("pump")))
@@ -666,11 +677,31 @@ namespace SystemMonitorApp
                                 float fanSpeed = sensor.Value ?? 0f;
                                 fans[name] = fanSpeed;
                             }
+                            // Check for RPM sensors (some hardware reports RPM directly)
+                            else if (sensor.Name.ToLower().Contains("rpm") || 
+                                    sensor.Name.ToLower().Contains("fan"))
+                            {
+                                string name = $"{hardware.Name} {sensor.Name}";
+                                float fanSpeed = sensor.Value ?? 0f;
+                                fans[name] = fanSpeed;
+                            }
+                            // For GPU specifically, also check all Control sensors
+                            else if ((hardware.HardwareType == HardwareType.GpuNvidia ||
+                                     hardware.HardwareType == HardwareType.GpuAmd ||
+                                     hardware.HardwareType == HardwareType.GpuIntel) &&
+                                    sensor.SensorType == SensorType.Control)
+                            {
+                                string name = $"{hardware.Name} {sensor.Name}";
+                                float fanSpeed = sensor.Value ?? 0f;
+                                fans[name] = fanSpeed;
+                            }
                         }
                         
-                        // Check sub-hardware (like CPU packages, etc.)
+                        // Check sub-hardware (like CPU packages, GPU sub-components, etc.)
                         foreach (var subHardware in hardware.SubHardware)
                         {
+                            subHardware.Update(); // Force update
+                            
                             foreach (var sensor in subHardware.Sensors)
                             {
                                 if (sensor.SensorType == SensorType.Fan)
@@ -687,12 +718,18 @@ namespace SystemMonitorApp
                                     float fanSpeed = sensor.Value ?? 0f;
                                     fans[name] = fanSpeed;
                                 }
+                                // Check for RPM sensors
+                                else if (sensor.Name.ToLower().Contains("rpm") || 
+                                        sensor.Name.ToLower().Contains("fan"))
+                                {
+                                    string name = $"{subHardware.Name} {sensor.Name}";
+                                    float fanSpeed = sensor.Value ?? 0f;
+                                    fans[name] = fanSpeed;
+                                }
                             }
                         }
                     }
                 }
-                
-                // No debug info - just return what we found
             }
             catch
             {
@@ -740,7 +777,7 @@ namespace SystemMonitorApp
                 
                 if (!foundGpu)
                 {
-                    gpuInfo = "GPU: Intel/AMD/NVIDIA\nLoad: 15-25%\nTemp: 45-55°C\nMemory: 2-8 GB";
+                    gpuInfo = "Ingen GPU detekterad\n\nMöjliga orsaker:\n• LibreHardwareMonitor stöder ej GPU\n• Administratörsbehörighet krävs\n• GPU-drivrutiner saknas";
                 }
                 
                 return gpuInfo;
