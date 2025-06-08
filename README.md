@@ -34,10 +34,12 @@ En elegant realtidsapplikation för övervakning av systemresurser med professio
 
 ### Installation
 
-#### 📦 **Alternativ 1: Färdig exe-fil (Enklast)**
-1. **Ladda ner** `publish-with-icon/SystemMonitorApp.exe`
+#### 📦 **Alternativ 1: Single exe-fil (PERFEKT!)**
+1. **Ladda ner** `publish-true-single/SystemMonitorApp.exe` (131MB)
 2. **Högerklicka** → "Kör som administratör"  
 3. **Acceptera UAC-prompten**
+
+> 🎉 **EN ENDA FIL!** Innehåller allt - ingen .NET installation krävs!
 
 #### 🔧 **Alternativ 2: Bygg från källkod**
 1. **Klona repository**
