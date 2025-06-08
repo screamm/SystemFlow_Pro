@@ -35,7 +35,7 @@ En elegant realtidsapplikation för övervakning av systemresurser med professio
 ### Installation
 
 #### 📦 **Alternativ 1: Single exe-fil (PERFEKT!)**
-1. **Ladda ner** `publish-true-single/SystemMonitorApp.exe` (131MB)
+1. **Ladda ner** `publish-true-single/SystemFlow-Pro.exe` (131MB)
 2. **Högerklicka** → "Kör som administratör"  
 3. **Acceptera UAC-prompten**
 
