@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NeuroFlow Icon Generator</title>
+    <title>SystemFlow Pro Icon Generator</title>
 </head>
 <body>
     <canvas id="iconCanvas" width="256" height="256" style="border: 1px solid #ccc;"></canvas>
@@ -24,21 +24,21 @@
         ctx.fillStyle = gradient;
         ctx.fillRect(0, 0, 256, 256);
 
-        // Draw modern "N" for NeuroFlow
+        // Draw modern "S" for SystemFlow
         ctx.fillStyle = '#FFFFFF';
         ctx.font = 'bold 180px "Segoe UI"';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        ctx.fillText('N', 128, 128);
+        ctx.fillText('S', 128, 128);
 
         // Add glow effect
         ctx.shadowColor = '#00D4AA';
         ctx.shadowBlur = 20;
-        ctx.fillText('N', 128, 128);
+        ctx.fillText('S', 128, 128);
 
         function downloadIcon() {
             const link = document.createElement('a');
-            link.download = 'neuroflow-icon.png';
+            link.download = 'systemflow-icon.png';
             link.href = canvas.toDataURL();
             link.click();
         }
