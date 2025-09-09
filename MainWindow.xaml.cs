@@ -309,22 +309,27 @@ namespace SystemMonitorApp
                         Margin = new Thickness(0, 2, 0, 0)
                     };
 
-                    // Set color based on temperature
+                    // Set color based on temperature with better formatting for text wrapping
+                    string tempName = temp.Key.Length > 25 ? temp.Key.Substring(0, 22) + "..." : temp.Key;
+                    
                     if (temp.Value > 80)
                     {
-                        tempText.Text = $"🔥 {temp.Key}: {temp.Value:F0}°C";
+                        tempText.Text = $"🔥 {tempName}: {temp.Value:F0}°C";
                         tempText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
                     }
                     else if (temp.Value > 60)
                     {
-                        tempText.Text = $"🔸 {temp.Key}: {temp.Value:F0}°C";
+                        tempText.Text = $"🔸 {tempName}: {temp.Value:F0}°C";
                         tempText.Foreground = (SolidColorBrush)FindResource("WarnBrush");
                     }
                     else
                     {
-                        tempText.Text = $"❄️ {temp.Key}: {temp.Value:F0}°C";
+                        tempText.Text = $"❄️ {tempName}: {temp.Value:F0}°C";
                         tempText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
                     }
+                    
+                    // Enable text wrapping for better display on smaller screens
+                    tempText.TextWrapping = TextWrapping.Wrap;
                     
                     ThermalPanel.Children.Add(tempText);
                 }
@@ -358,20 +363,23 @@ namespace SystemMonitorApp
                         Margin = new Thickness(0, 2, 0, 0)
                     };
 
+                    // Clean up fan name for better display
+                    string fanName = fan.Key.Length > 20 ? fan.Key.Substring(0, 17) + "..." : fan.Key;
+                    
                     // Set status based on RPM
                     if (fan.Value > 2000)
                     {
-                        fanText.Text = $"🟢 {fan.Key}: {fan.Value:F0} RPM";
+                        fanText.Text = $"🟢 {fanName}: {fan.Value:F0} RPM";
                         fanText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
                     }
                     else if (fan.Value > 800)
                     {
-                        fanText.Text = $"🟡 {fan.Key}: {fan.Value:F0} RPM";
+                        fanText.Text = $"🟡 {fanName}: {fan.Value:F0} RPM";
                         fanText.Foreground = (SolidColorBrush)FindResource("WarnBrush");
                     }
                     else if (fan.Value > 0)
                     {
-                        fanText.Text = $"🔴 {fan.Key}: {fan.Value:F0} RPM";
+                        fanText.Text = $"🔴 {fanName}: {fan.Value:F0} RPM";
                         fanText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
                     }
                     else
@@ -380,15 +388,19 @@ namespace SystemMonitorApp
                         if (fan.Key.ToLower().Contains("gpu") && 
                             (fan.Key.ToLower().Contains("nvidia") || fan.Key.ToLower().Contains("geforce")))
                         {
-                            fanText.Text = $"❄️ {fan.Key}: Zero RPM Mode";
+                            fanText.Text = $"❄️ {fanName}: Zero RPM Mode";
                             fanText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
                         }
                         else
                         {
-                            fanText.Text = $"⚫ {fan.Key}: Inaktiv";
+                            fanText.Text = $"⚫ {fanName}: Inaktiv";
                             fanText.Foreground = (SolidColorBrush)FindResource("TextMutedBrush");
                         }
                     }
+                    
+                    // Enable text wrapping and set margin
+                    fanText.TextWrapping = TextWrapping.Wrap;
+                    fanText.Margin = new Thickness(0, 1, 0, 1);
                     
                     // Categorize fans
                     if (fan.Key.ToLower().Contains("gpu") || 
@@ -422,7 +434,7 @@ namespace SystemMonitorApp
                 {
                     SystemFansPanel.Children.Add(new TextBlock
                     {
-                        Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt om:\n• GPU-fläktar ej exponerade av drivrutin\n• LibreHardwareMonitor ej stöder ditt grafikkort\n• Moderna GPU:er har Zero RPM Mode\n• Passiv kylning eller låg temperatur",
+                        Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt om:\n• GPU-fläktar ej exponerade av drivrutin\n• LibreHardwareMonitor ej stöder ditt grafikkort\n• Moderna GPU:er har Zero RPM Mode\n• Passiv kylning eller låg temperatur\n• Äldre system rapporterar som procent/kontroll",
                         Style = (Style)FindResource("DataText"),
                         Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                         TextWrapping = TextWrapping.Wrap
@@ -622,8 +634,16 @@ namespace SystemMonitorApp
                         {
                             if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
                             {
-                                string name = $"{hardware.Name} {sensor.Name}";
-                                temperatures[name] = sensor.Value.Value;
+                                float tempValue = sensor.Value.Value;
+                                
+                                // Validate temperature reading (filter out obviously incorrect readings)
+                                if (tempValue > 0 && tempValue < 150) // Reasonable temp range 1-149°C
+                                {
+                                    string name = $"{hardware.Name} {sensor.Name}";
+                                    // Clean up sensor name for better display
+                                    name = name.Replace("Temperature", "Temp").Replace("Package", "Pkg");
+                                    temperatures[name] = tempValue;
+                                }
                             }
                         }
                     }
@@ -666,6 +686,20 @@ namespace SystemMonitorApp
                             {
                                 string name = $"{hardware.Name} {sensor.Name}";
                                 float fanSpeed = sensor.Value ?? 0f;
+                                
+                                // Handle systems that report fan speed as percentage (0-100) instead of RPM
+                                // If value is suspiciously low for RPM (like 30-39 for GPU), likely percentage
+                                if (fanSpeed > 0 && fanSpeed < 200 && 
+                                    (hardware.HardwareType == HardwareType.GpuNvidia ||
+                                     hardware.HardwareType == HardwareType.GpuAmd ||
+                                     hardware.HardwareType == HardwareType.GpuIntel ||
+                                     name.ToLower().Contains("gpu")))
+                                {
+                                    // Convert percentage to estimated RPM (multiply by ~50)
+                                    // This is an approximation: 0% = 0 RPM, 100% = ~5000 RPM
+                                    fanSpeed = fanSpeed * 50f;
+                                }
+                                
                                 fans[name] = fanSpeed;
                             }
                             // Check for Control sensors (fans often reported as Control)
@@ -675,6 +709,17 @@ namespace SystemMonitorApp
                             {
                                 string name = $"{hardware.Name} {sensor.Name}";
                                 float fanSpeed = sensor.Value ?? 0f;
+                                
+                                // Handle percentage to RPM conversion for Control sensors too
+                                if (fanSpeed > 0 && fanSpeed < 200 && 
+                                    (hardware.HardwareType == HardwareType.GpuNvidia ||
+                                     hardware.HardwareType == HardwareType.GpuAmd ||
+                                     hardware.HardwareType == HardwareType.GpuIntel ||
+                                     name.ToLower().Contains("gpu")))
+                                {
+                                    fanSpeed = fanSpeed * 50f;
+                                }
+                                
                                 fans[name] = fanSpeed;
                             }
                             // Check for RPM sensors (some hardware reports RPM directly)
