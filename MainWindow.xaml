@@ -141,7 +141,7 @@
                                Foreground="{StaticResource TextPrimaryBrush}" VerticalAlignment="Center"/>
                     <TextBlock Text="PRO" FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Bold" 
                                Foreground="{StaticResource AccentBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
-                    <TextBlock Text="v1.0.7" FontFamily="Segoe UI Variable" FontSize="10" FontWeight="Medium" 
+                    <TextBlock Text="v1.0.8" FontFamily="Segoe UI Variable" FontSize="10" FontWeight="Medium" 
                                Foreground="{StaticResource TextMutedBrush}" VerticalAlignment="Center" Margin="8,0,0,0"/>
                 </StackPanel>
 

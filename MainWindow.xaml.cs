@@ -728,10 +728,21 @@ namespace SystemMonitorApp
         {
             var fans = new Dictionary<string, float>();
             
-            // Try multiple detection strategies for better compatibility
+            // Prioritize real hardware data over fallback estimates
+            // Try LibreHardwareMonitor first (most accurate on modern systems)
             await TryLibreHardwareMonitorFans(fans);
-            await TryWindowsManagementFans(fans);
-            await TryEstimatedFansFromTemperature(fans);
+            
+            // Only try Windows Management if no fans found yet
+            if (fans.Count == 0)
+            {
+                await TryWindowsManagementFans(fans);
+            }
+            
+            // Only use estimated/fallback values if still no real fans found
+            if (fans.Count == 0)
+            {
+                await TryEstimatedFansFromTemperature(fans);
+            }
             
             return fans;
         }
@@ -746,56 +757,70 @@ namespace SystemMonitorApp
                     
                     foreach (var hardware in computer.Hardware)
                     {
-                        // Force hardware update for GPU specifically
-                        if (hardware.HardwareType == HardwareType.GpuNvidia || 
-                            hardware.HardwareType == HardwareType.GpuAmd ||
-                            hardware.HardwareType == HardwareType.GpuIntel)
-                        {
-                            hardware.Update();
-                        }
+                        // Force hardware update for all hardware types
+                        hardware.Update();
+                        
+                        // Special GPU handling for modern NVIDIA/AMD cards
+                        bool isGpu = hardware.HardwareType == HardwareType.GpuNvidia || 
+                                    hardware.HardwareType == HardwareType.GpuAmd ||
+                                    hardware.HardwareType == HardwareType.GpuIntel;
                         
                         foreach (var sensor in hardware.Sensors)
                         {
-                            // Check for Fan sensors
-                            if (sensor.SensorType == SensorType.Fan)
+                            // Check for Fan sensors (prioritize real RPM values)
+                            if (sensor.SensorType == SensorType.Fan && sensor.Value.HasValue && sensor.Value > 0)
                             {
                                 string name = $"{hardware.Name} {sensor.Name}";
-                                float fanSpeed = sensor.Value ?? 0f;
+                                float fanSpeed = sensor.Value.Value;
                                 
-                                // Handle systems that report fan speed as percentage (0-100) instead of RPM
-                                // If value is suspiciously low for RPM (like 30-39 for GPU), likely percentage
-                                if (fanSpeed > 0 && fanSpeed < 200 && 
-                                    (hardware.HardwareType == HardwareType.GpuNvidia ||
-                                     hardware.HardwareType == HardwareType.GpuAmd ||
-                                     hardware.HardwareType == HardwareType.GpuIntel ||
-                                     name.ToLower().Contains("gpu")))
+                                // Modern GPUs usually report real RPM values (>100 RPM typical)
+                                // Only convert if it's clearly a percentage (0-100 range)
+                                if (isGpu && fanSpeed > 0 && fanSpeed <= 100)
                                 {
-                                    // Convert percentage to estimated RPM (multiply by ~50)
-                                    // This is an approximation: 0% = 0 RPM, 100% = ~5000 RPM
-                                    fanSpeed = fanSpeed * 50f;
+                                    // This appears to be percentage, convert to estimated RPM
+                                    fanSpeed = fanSpeed * 30f;
+                                    name = $"{name} (estimated)";
+                                }
+                                else if (isGpu)
+                                {
+                                    // Real RPM value from modern GPU - this is what we want!
+                                    name = $"{name}";
                                 }
                                 
                                 fans[name] = fanSpeed;
                             }
                             // Check for Control sensors (fans often reported as Control)
-                            else if (sensor.SensorType == SensorType.Control && 
-                                    (sensor.Name.ToLower().Contains("fan") || 
-                                     sensor.Name.ToLower().Contains("pump")))
+                            else if (sensor.SensorType == SensorType.Control && sensor.Value.HasValue && sensor.Value > 0)
                             {
-                                string name = $"{hardware.Name} {sensor.Name}";
-                                float fanSpeed = sensor.Value ?? 0f;
+                                string sensorNameLower = sensor.Name.ToLower();
                                 
-                                // Handle percentage to RPM conversion for Control sensors too
-                                if (fanSpeed > 0 && fanSpeed < 200 && 
-                                    (hardware.HardwareType == HardwareType.GpuNvidia ||
-                                     hardware.HardwareType == HardwareType.GpuAmd ||
-                                     hardware.HardwareType == HardwareType.GpuIntel ||
-                                     name.ToLower().Contains("gpu")))
+                                // Check if this is a fan-related control
+                                if (sensorNameLower.Contains("fan") || 
+                                    sensorNameLower.Contains("pump") ||
+                                    (isGpu && sensorNameLower.Contains("gpu")))
                                 {
-                                    fanSpeed = fanSpeed * 50f;
+                                    string name = $"{hardware.Name} {sensor.Name}";
+                                    float fanSpeed = sensor.Value.Value;
+                                    
+                                    // Control sensors usually report percentage (0-100)
+                                    // Convert to RPM for display
+                                    if (fanSpeed > 0 && fanSpeed <= 100)
+                                    {
+                                        if (isGpu)
+                                        {
+                                            // GPU fans: typically 0-3000 RPM range
+                                            fanSpeed = fanSpeed * 30f;
+                                            name = $"{name} Fan";
+                                        }
+                                        else
+                                        {
+                                            // CPU/Case fans: typically 0-2000 RPM range  
+                                            fanSpeed = fanSpeed * 20f;
+                                        }
+                                    }
+                                    
+                                    fans[name] = fanSpeed;
                                 }
-                                
-                                fans[name] = fanSpeed;
                             }
                             // Check for RPM sensors (some hardware reports RPM directly)
                             else if (sensor.Name.ToLower().Contains("rpm") || 
@@ -806,14 +831,25 @@ namespace SystemMonitorApp
                                 fans[name] = fanSpeed;
                             }
                             // For GPU specifically, also check all Control sensors
-                            else if ((hardware.HardwareType == HardwareType.GpuNvidia ||
-                                     hardware.HardwareType == HardwareType.GpuAmd ||
-                                     hardware.HardwareType == HardwareType.GpuIntel) &&
-                                    sensor.SensorType == SensorType.Control)
+                            else if (isGpu && sensor.SensorType == SensorType.Control && 
+                                    sensor.Value.HasValue && sensor.Value > 0)
                             {
-                                string name = $"{hardware.Name} {sensor.Name}";
-                                float fanSpeed = sensor.Value ?? 0f;
-                                fans[name] = fanSpeed;
+                                // Skip if we already have this from above
+                                string sensorNameLower = sensor.Name.ToLower();
+                                if (!sensorNameLower.Contains("fan") && !sensorNameLower.Contains("pump"))
+                                {
+                                    string name = $"{hardware.Name} {sensor.Name}";
+                                    float fanSpeed = sensor.Value.Value;
+                                    
+                                    // GPU Control sensors are often percentage
+                                    if (fanSpeed <= 100)
+                                    {
+                                        fanSpeed = fanSpeed * 30f; // Convert to RPM estimate
+                                        name = $"{name} Control";
+                                    }
+                                    
+                                    fans[name] = fanSpeed;
+                                }
                             }
                         }
                         
