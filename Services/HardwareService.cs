@@ -318,19 +318,31 @@ namespace SystemMonitorApp.Services
             string sensorNameLower = sensor.Name.ToLowerInvariant();
             string displayName = $"{hwName} {sensor.Name}";
 
+            // Primary: Fan sensor → RPM
             if (sensor.SensorType == SensorType.Fan)
             {
                 result[displayName] = new FanReading(sensor.Value.Value, IsPercent: false, IsGpu: isGpu);
                 return;
             }
 
+            // Primary: Control sensor with fan-related name → PWM percent
             if (sensor.SensorType == SensorType.Control)
             {
                 bool fanRelated = sensorNameLower.Contains("fan")
                                || sensorNameLower.Contains("pump")
                                || (isGpu && sensorNameLower.Contains("gpu"));
-                if (!fanRelated) return;
-                result[displayName] = new FanReading(sensor.Value.Value, IsPercent: true, IsGpu: isGpu);
+                if (fanRelated)
+                    result[displayName] = new FanReading(sensor.Value.Value, IsPercent: true, IsGpu: isGpu);
+                return;
+            }
+
+            // Fallback: sensor name contains "rpm" or "fan" under another SensorType.
+            // Some motherboards (and older SuperIO chips) expose fans as Factor, Data,
+            // or other categories — v1.0.8.1 picked these up via name match and we
+            // must keep that behavior or real fans disappear on those systems.
+            if (sensorNameLower.Contains("rpm") || sensorNameLower.Contains("fan"))
+            {
+                result[displayName] = new FanReading(sensor.Value.Value, IsPercent: false, IsGpu: isGpu);
             }
         }
 

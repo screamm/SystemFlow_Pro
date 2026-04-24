@@ -30,7 +30,6 @@ namespace SystemMonitorApp
         {
             var splashStarted = DateTime.UtcNow;
             MainWindow? mainWindow = null;
-            bool showAdminMessage = false;
             bool startupFailed = false;
 
             try
@@ -48,21 +47,6 @@ namespace SystemMonitorApp
                 // Heavy init happens on background thread now — splash can stay interactive.
                 await mainWindow.InitializeAsync();
 
-                // Admin detection (cheap but do it off the main path).
-                await Task.Run(() =>
-                {
-                    try
-                    {
-                        var principal = new System.Security.Principal.WindowsPrincipal(
-                            System.Security.Principal.WindowsIdentity.GetCurrent());
-                        showAdminMessage = !principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
-                    }
-                    catch (Exception ex)
-                    {
-                        Logger.Warn("Admin-status detection failed", ex);
-                    }
-                });
-
                 // Ensure splash is visible at least MinSplashMs so it doesn't flash.
                 var elapsed = (DateTime.UtcNow - splashStarted).TotalMilliseconds;
                 if (elapsed < MinSplashMs)
@@ -77,20 +61,6 @@ namespace SystemMonitorApp
 
                 // Tiny settle time so the main window renders before splash fades.
                 await Task.Delay(150);
-
-                if (showAdminMessage)
-                {
-                    await Task.Delay(500);
-                    await Dispatcher.InvokeAsync(() =>
-                    {
-                        MessageBox.Show(
-                            "För att få tillgång till all hårdvarudata rekommenderas att köra applikationen som administratör.\n\n" +
-                            "Vissa fläkt- och temperaturdata kanske inte visas utan administratörsrättigheter.",
-                            "Administratörsrättigheter",
-                            MessageBoxButton.OK,
-                            MessageBoxImage.Information);
-                    });
-                }
 
                 Logger.Info($"Main window shown successfully (total startup {((DateTime.UtcNow - splashStarted).TotalMilliseconds):F0}ms)");
 

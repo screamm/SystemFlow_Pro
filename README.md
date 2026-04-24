@@ -55,10 +55,13 @@ Ger `publish\v1.1.0\SystemFlow-Pro.exe` och `releases\SystemFlow-Pro-v1.1.0-win-
 
 ### Administratörsbehörighet
 
-Appen körs som `asInvoker` (vanliga användarrättigheter). Vissa sensorer —
-främst MSR-läsningar på vissa CPU:er — kräver admin för full detaljnivå.
-Appen visar "Administratörsbehörighet: Nej" i fläktpanelerna om du kör som
-vanlig användare och relevanta sensorer inte är tillgängliga.
+Appen kräver administratörsrättigheter (`requireAdministrator` i manifestet).
+Windows UAC-prompten visas vid varje start. Detta är nödvändigt för att läsa
+MSR-register (CPU-temperatur på många moderna CPU:er), fläkt-sensorer via
+SuperIO-chip och vissa GPU-sensorer som annars är skyddade.
+
+Utan admin skulle merparten av sensorerna returnera "N/A" på moderna system —
+därför har vi valt admin-by-default istället för degraderad upplevelse.
 
 ---
 

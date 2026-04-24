@@ -316,17 +316,11 @@ namespace SystemMonitorApp
 
         private void EnsureFanEmptyPlaceholders()
         {
-            if (_viewModel == null) return;
-
-            string adminStatus = _viewModel.IsAdminMode
-                ? "Administratörsbehörighet: Ja"
-                : "Administratörsbehörighet: Nej (kör som admin för bättre hårdvaruåtkomst)";
-
             if (CpuFansPanel.Children.Count == 0)
             {
                 CpuFansPanel.Children.Add(new TextBlock
                 {
-                    Text = $"Inga CPU/system-fläktar detekterade\n\n{adminStatus}\n\nTroliga orsaker:\n• Moderkortet exponerar inte RPM-data\n• Fläktar anslutna direkt till PSU\n• Äldre hårdvara saknar sensor-stöd",
+                    Text = "Inga CPU/system-fläktar detekterade\n\nTroliga orsaker:\n• Moderkortet exponerar inte RPM-data via WMI/LHM\n• Fläktar anslutna direkt till PSU\n• Äldre hårdvara saknar sensor-stöd",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap
@@ -337,7 +331,7 @@ namespace SystemMonitorApp
             {
                 SystemFansPanel.Children.Add(new TextBlock
                 {
-                    Text = $"Inga GPU-fläktar detekterade\n\n{adminStatus}\n\nDetta är normalt på äldre system:\n• GPU-fläktar ej exponerade av drivrutin\n• Zero RPM Mode vid låga temperaturer\n• Passiv kylning",
+                    Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt på äldre system:\n• GPU-fläktar ej exponerade av drivrutin\n• Zero RPM Mode vid låga temperaturer\n• Passiv kylning",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap
