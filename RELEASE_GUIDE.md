@@ -1,27 +1,27 @@
 # 🚀 GitHub Release Guide - SystemFlow Pro
 
-## 📦 Skapa din första Release
+## 📦 Create your first Release
 
-### 1️⃣ **Förbered filen**
+### 1️⃣ **Prepare the file**
 ```bash
-# Bygg single-file exe
+# Build single-file exe
 .\create_single_exe.bat
 
-# Komprimera för snabbare nedladdning (optional)
+# Compress for faster download (optional)
 Compress-Archive -Path "publish-true-single\SystemMonitorApp.exe" -DestinationPath "SystemFlow-Pro-v1.0.0.zip"
 ```
 
-### 2️⃣ **Skapa Release på GitHub**
+### 2️⃣ **Create a Release on GitHub**
 
-1. **Gå till ditt repository** på GitHub
-2. **Klicka "Releases"** (höger sida)
+1. **Go to your repository** on GitHub
+2. **Click "Releases"** (right side)
 3. **"Create a new release"**
-4. **Fyll i formuläret:**
+4. **Fill in the form:**
 
 **Tag version:** `v1.0.0`  
 **Release title:** `SystemFlow Pro v1.0.0 - Initial Release`
 
-**Release notes mall:**
+**Release notes template:**
 ```markdown
 # 🎉 SystemFlow Pro v1.0.0
 
@@ -52,26 +52,26 @@ Compress-Archive -Path "publish-true-single\SystemMonitorApp.exe" -DestinationPa
 - First startup may take 5-10 seconds
 
 ---
-Built with ❤️ using .NET 9.0 and LibreHardwareMonitor
+Built with .NET 9.0 and LibreHardwareMonitor
 ```
 
-5. **Lägg till filer:**
-   - Dra `SystemFlow-Pro.exe` till "Attach binaries"
-   - Dra `SystemFlow-Pro-v1.0.0.zip` (optional)
+5. **Add files:**
+   - Drag `SystemFlow-Pro.exe` to "Attach binaries"
+   - Drag `SystemFlow-Pro-v1.0.0.zip` (optional)
 
-6. **Publicera:** "Publish release"
+6. **Publish:** "Publish release"
 
-### 3️⃣ **Framtida versioner**
+### 3️⃣ **Future versions**
 
-**Semantisk versioning:**
+**Semantic versioning:**
 - `v1.0.0` - Initial release
 - `v1.0.1` - Bug fixes
 - `v1.1.0` - New features
 - `v2.0.0` - Breaking changes
 
-## 🔄 Automatisering (Advanced)
+## 🔄 Automation (Advanced)
 
-Skapa `.github/workflows/release.yml`:
+Create `.github/workflows/release.yml`:
 ```yaml
 name: Create Release
 on:
@@ -100,14 +100,14 @@ jobs:
          generate_release_notes: true
 ```
 
-## 📊 Statistik & Analytics
-- GitHub visar automatiskt nedladdnings-statistik
-- Användare kan rapportera issues
-- Community kan bidra med förbättringar
+## 📊 Statistics & Analytics
+- GitHub automatically shows download statistics
+- Users can report issues
+- The community can contribute improvements
 
 ## 🎯 Best Practices
-1. **Testa alltid** på clean Windows innan release
-2. **Skriv tydliga release notes**
-3. **Använd beskrivande taggar**
-4. **Inkludera både exe och zip**
-5. **Svara på användar-feedback** 
+1. **Always test** on clean Windows before release
+2. **Write clear release notes**
+3. **Use descriptive tags**
+4. **Include both exe and zip**
+5. **Respond to user feedback**

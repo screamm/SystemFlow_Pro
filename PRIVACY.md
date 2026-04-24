@@ -1,91 +1,91 @@
-# SystemFlow Pro — Sekretesspolicy
+# SystemFlow Pro — Privacy Policy
 
-**Senast uppdaterad:** 2026-04-22 (Sprint 5)
+**Last updated:** 2026-04-22 (Sprint 5)
 
-SystemFlow Pro är en lokalkörd Windows-applikation som läser
-hårdvaruinformation direkt från din dator. Vi samlar inte in, lagrar eller
-överför någon personligt identifierbar information till externa servrar som
+SystemFlow Pro is a locally executed Windows application that reads
+hardware information directly from your computer. We do not collect, store, or
+transmit any personally identifiable information to external servers by
 default.
 
-## Vad programmet läser lokalt
+## What the program reads locally
 
-SystemFlow Pro läser följande från din Windows-dator:
+SystemFlow Pro reads the following from your Windows computer:
 
-- **Hårdvaruinfo:** CPU-namn, antal kärnor, GPU-namn, total RAM-mängd
-- **Sensorer:** CPU/GPU-belastning, temperaturer, fläkthastigheter
-- **Systeminfo:** OS-version (t.ex. "Windows 11 build 22621"), aktuell användares
-  inloggningsnamn (t.ex. "david") — visas i Hårdvaru Info-panelen
-- **Processorräknare:** `% Processor Time`, `Available MBytes` (Windows Performance Counters)
+- **Hardware info:** CPU name, number of cores, GPU name, total RAM amount
+- **Sensors:** CPU/GPU load, temperatures, fan speeds
+- **System info:** OS version (e.g., "Windows 11 build 22621"), the current user's
+  login name (e.g., "david") — shown in the Hardware Info panel
+- **Performance counters:** `% Processor Time`, `Available MBytes` (Windows Performance Counters)
 
-All läsning sker **lokalt på din dator**. Inget av detta lämnar maskinen.
+All reading happens **locally on your computer**. None of this leaves the machine.
 
-## Vad som lagras lokalt
+## What is stored locally
 
-Dessa filer skapas i `%APPDATA%\SystemFlow Pro\`:
+These files are created in `%APPDATA%\SystemFlow Pro\`:
 
-| Fil | Innehåll | Syfte |
-|-----|----------|-------|
-| `settings.json` | Pollingintervall, temperaturenhet, "pausa vid minimering" | Användarinställningar |
-| `logs/app-YYYY-MM-DD.log` | Diagnostik, fel, uppstartshändelser | Felsökning — visar inte känsliga värden som sensorutslag |
+| File | Content | Purpose |
+|------|---------|---------|
+| `settings.json` | Polling interval, temperature unit, "pause on minimize" | User settings |
+| `logs/app-YYYY-MM-DD.log` | Diagnostics, errors, startup events | Troubleshooting — does not record sensitive values such as sensor readings |
 
-Loggfiler roteras automatiskt vid 5 MB (senaste 5 sparas). Du kan radera
-mappen `%APPDATA%\SystemFlow Pro\` när som helst — programmet skapar den
-igen vid nästa start.
+Log files rotate automatically at 5 MB (the latest 5 are kept). You can delete
+the folder `%APPDATA%\SystemFlow Pro\` at any time — the program recreates it
+on the next start.
 
-## Vad som INTE samlas in eller skickas
+## What is NOT collected or sent
 
-- Inga telemetridata
-- Inga analytics-pingar
-- Ingen molnsynk
-- Inga automatiska buggrapporter (default — se nedan)
-- Ingen IP-adressinsamling
-- Inga kakor / tracking
+- No telemetry data
+- No analytics pings
+- No cloud sync
+- No automatic bug reports (by default — see below)
+- No IP address collection
+- No cookies / tracking
 
-## Nätverksaktivitet
+## Network activity
 
-SystemFlow Pro gör **en** nätverksanslutning per appstart:
+SystemFlow Pro makes **one** network connection per app start:
 
-**Uppdateringskontroll** — en HTTPS-förfrågan till GitHub API
-(`api.github.com/repos/screamm/SystemFlow_Pro/releases/latest`) för
-att se om en nyare version finns tillgänglig. Endast HTTP User-Agent
-("SystemFlow-Pro") och GitHub's standardlogg skapas. Ingen identifiering.
+**Update check** — an HTTPS request to the GitHub API
+(`api.github.com/repos/screamm/SystemFlow_Pro/releases/latest`) to
+check whether a newer version is available. Only the HTTP User-Agent
+("SystemFlow-Pro") and GitHub's standard log entry are created. No identification.
 
-Du kan avstänga uppdateringskontrollen genom att sätta
-`"CheckForUpdates": false` i `settings.json`.
+You can disable the update check by setting
+`"CheckForUpdates": false` in `settings.json`.
 
-## Crash-rapportering
+## Crash reporting
 
-**Opt-in endast.** Vid krasch visas en dialog som frågar om du vill skicka
-crash-rapporten. Om du säger nej sparas rapporten bara lokalt i
+**Opt-in only.** When a crash occurs, a dialog asks whether you want to send
+the crash report. If you decline, the report is only saved locally in
 `%APPDATA%\SystemFlow Pro\logs\`.
 
-Om/när externa crash-rapporteringstjänster (t.ex. Sentry) aktiveras i
-framtida versioner uppdateras detta dokument först och aktivering är
-fortfarande opt-in.
+If/when external crash reporting services (e.g., Sentry) are enabled in
+future versions, this document will be updated first and enabling remains
+opt-in.
 
 ## GDPR
 
-Eftersom programmet inte samlar eller överför data till utvecklaren är
-GDPR-relevansen minimal. Den användardata som existerar (`settings.json` +
-loggfiler) lagras på din egen dator under din kontroll.
+Because the program does not collect or transmit data to the developer,
+GDPR relevance is minimal. The user data that exists (`settings.json` +
+log files) is stored on your own computer under your control.
 
-Du har full rätt att:
-- Radera datan (ta bort `%APPDATA%\SystemFlow Pro\`)
-- Inspektera datan (vanliga JSON + textfiler)
-- Förhindra framtida lagring (ta bort mappen efter varje användning)
+You have the full right to:
+- Delete the data (remove `%APPDATA%\SystemFlow Pro\`)
+- Inspect the data (plain JSON + text files)
+- Prevent future storage (remove the folder after each use)
 
-## Tredjepart
+## Third-party
 
-SystemFlow Pro använder LibreHardwareMonitor-biblioteket för
-hårdvaruläsning. LibreHardwareMonitor kör lokalt och skickar ingen data.
-Se `THIRD_PARTY_LICENSES.txt` för fullständig licenslista.
+SystemFlow Pro uses the LibreHardwareMonitor library for
+hardware reading. LibreHardwareMonitor runs locally and sends no data.
+See `THIRD_PARTY_LICENSES.txt` for the full license list.
 
-## Ändringar i denna policy
+## Changes to this policy
 
-Ändringar publiceras i repot:
+Changes are published in the repo:
 https://github.com/screamm/SystemFlow_Pro/blob/main/PRIVACY.md
 
-## Kontakt
+## Contact
 
-Frågor eller invändningar:
+Questions or objections:
 https://github.com/screamm/SystemFlow_Pro/issues

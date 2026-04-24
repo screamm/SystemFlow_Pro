@@ -1,75 +1,75 @@
-# SystemFlow Pro v1.0.9 — Stabilisering & säkerhet
+# SystemFlow Pro v1.0.9 — Stabilization & security
 
 **Release date:** TBD
 **Branch:** `sprint-01-stabilisering`
 
-Första av tre säkerhetsreleaser på väg mot v1.1.0. Fokus: eliminera aktiva
-buggar, tysta catch-block, onödiga admin-krav och async-antimönster.
+First of three security releases on the path to v1.1.0. Focus: eliminate active
+bugs, silent catch blocks, unnecessary admin requirements, and async anti-patterns.
 
-## Säkerhetsförbättringar
+## Security improvements
 
-- **Admin-rättigheter krävs inte längre.** `app.manifest` ändrat från
-  `requireAdministrator` → `asInvoker`. Appen fungerar för vanliga användare;
-  sensorer som kräver admin (vissa MSR-läsningar) degraderar till "N/A".
-  Fallback-UI visar info om admin-status.
-- **Global felhantering.** `App.xaml.cs` registrerar
-  `DispatcherUnhandledException`, `TaskScheduler.UnobservedTaskException` och
-  `AppDomain.CurrentDomain.UnhandledException`. Kraschen loggas och ett
-  användarvänligt felmeddelande visas istället för tyst crash.
-- **Strukturerad loggning.** Ny `Logger`-klass skriver till
-  `%APPDATA%\SystemFlow Pro\logs\app-{datum}.log` med rotation vid 5 MB
-  (senaste 5 filer sparas). 13 tidigare tomma `catch {}`-block ersatta med
-  `Logger.Warn(...)`-anrop som behåller felsäkra defaultvärden.
-- **WMI-timeouts.** Alla `ManagementObjectSearcher`-anrop har nu 2-sekunders
-  timeout via `EnumerationOptions`. Förhindrar att appen hänger på trasiga
-  WMI-providers.
+- **Admin rights no longer required.** `app.manifest` changed from
+  `requireAdministrator` → `asInvoker`. The app works for regular users;
+  sensors that require admin (certain MSR reads) degrade to "N/A".
+  Fallback UI displays information about admin status.
+- **Global error handling.** `App.xaml.cs` registers
+  `DispatcherUnhandledException`, `TaskScheduler.UnobservedTaskException`, and
+  `AppDomain.CurrentDomain.UnhandledException`. Crashes are logged and a
+  user-friendly error message is shown instead of a silent crash.
+- **Structured logging.** New `Logger` class writes to
+  `%APPDATA%\SystemFlow Pro\logs\app-{date}.log` with rotation at 5 MB
+  (the 5 most recent files are kept). 13 previously empty `catch {}` blocks
+  replaced with `Logger.Warn(...)` calls that preserve safe default values.
+- **WMI timeouts.** All `ManagementObjectSearcher` calls now have a 2-second
+  timeout via `EnumerationOptions`. Prevents the app from hanging on broken
+  WMI providers.
 
-## Stabilitetsförbättringar
+## Stability improvements
 
-- **Deadlock-fix.** `GetTotalMemoryGB().Result` som anropades synkront på
-  UI-tråden i `UpdateMemoryPanel` har tagits bort. Totalt fysiskt minne
-  läses nu **en gång** i konstruktorn och cachas i `_totalMemoryGB` —
-  värdet ändras aldrig under körning.
-- **En hårdvaru-uppdatering per tick.** `computer.Accept(new UpdateVisitor())`
-  anropades tidigare 5-7 gånger per tick (GpuUsage, AvgTemp, ThermalData,
-  FanData, GpuInfo). Nu anropas Accept **en gång** först i `UpdateSystemData`
-  och en delad `UpdateVisitor`-instans återanvänds. Minskar race conditions
-  i LibreHardwareMonitor och elimineras per-tick allokering.
-- **Stavfel fixat.** "HÖRG BELASTNING" → "HÖG BELASTNING" i systemstatus.
+- **Deadlock fix.** `GetTotalMemoryGB().Result` which was called synchronously
+  on the UI thread in `UpdateMemoryPanel` has been removed. Total physical
+  memory is now read **once** in the constructor and cached in `_totalMemoryGB` —
+  the value never changes during runtime.
+- **One hardware update per tick.** `computer.Accept(new UpdateVisitor())`
+  was previously called 5-7 times per tick (GpuUsage, AvgTemp, ThermalData,
+  FanData, GpuInfo). Now Accept is called **once** first in `UpdateSystemData`
+  and a shared `UpdateVisitor` instance is reused. Reduces race conditions
+  in LibreHardwareMonitor and eliminates per-tick allocation.
+- **Typo fixed.** "HORG LOAD" → "HIGH LOAD" in the system status.
 
-## Kodkvalitet
+## Code quality
 
-- **Modern C# aktiverad.** `<Nullable>enable</Nullable>`,
+- **Modern C# enabled.** `<Nullable>enable</Nullable>`,
   `<ImplicitUsings>enable</ImplicitUsings>`, `<LangVersion>latest</LangVersion>`.
-  `CS1998` (async utan await) behandlas nu som error.
-- **async-cleanup.** Hårdvaruläsare (`GetGpuUsage`, `GetAverageTemperature`,
-  `GetThermalData`, `GetGpuInfo`) är nu synkrona — de hade `async Task<T>`
-  utan `await`, vilket gav CS1998-varning och körde ändå på UI-tråden.
-  (Sprint 2 flyttar hela tick-arbetet till bakgrundstråd.)
-- **Död kod borttagen:** `_gpuCounter`-field (aldrig tilldelad),
-  `EstimateFanSpeedFromTemperature`-metod (aldrig anropad).
-- **Event unsubscribe.** `_timer.Tick -= Timer_Tick` i `OnClosed` för att
-  frigöra WPF-objektet vid fönster-stängning.
+  `CS1998` (async without await) is now treated as an error.
+- **async cleanup.** Hardware readers (`GetGpuUsage`, `GetAverageTemperature`,
+  `GetThermalData`, `GetGpuInfo`) are now synchronous — they had `async Task<T>`
+  without `await`, which caused a CS1998 warning and still ran on the UI thread.
+  (Sprint 2 moves the entire tick work to a background thread.)
+- **Dead code removed:** `_gpuCounter` field (never assigned),
+  `EstimateFanSpeedFromTemperature` method (never called).
+- **Event unsubscribe.** `_timer.Tick -= Timer_Tick` in `OnClosed` to
+  release the WPF object when the window is closed.
 
-## UI-småfixar
+## Minor UI fixes
 
-- `Icon="app.ico"` lagt till på MainWindow och SplashWindow — korrekt ikon
-  visas nu i taskbar och Alt+Tab.
+- `Icon="app.ico"` added to MainWindow and SplashWindow — the correct icon
+  is now shown in the taskbar and Alt+Tab.
 
-## Filer påverkade
+## Files affected
 
-- `App.xaml.cs` — rewritten med global exception handling
-- `MainWindow.xaml.cs` — rewritten, ~25% mindre logik kvar efter bortplock
-- `MainWindow.xaml` — Icon tillagd
-- `SplashWindow.xaml` — Icon tillagd
+- `App.xaml.cs` — rewritten with global exception handling
+- `MainWindow.xaml.cs` — rewritten, ~25% less logic remaining after cleanup
+- `MainWindow.xaml` — Icon added
+- `SplashWindow.xaml` — Icon added
 - `app.manifest` — `asInvoker`
-- `SystemMonitorApp.csproj` — nullable + language-settings
-- `Services/Logger.cs` — ny fil
+- `SystemMonitorApp.csproj` — nullable + language settings
+- `Services/Logger.cs` — new file
 
-## Kvarstår till Sprint 2
+## Remaining for Sprint 2
 
-- UI-tråden blockeras fortfarande av WMI-anrop (~20-200ms per tick)
-- UI-paneler rivs och byggs om varje sekund (GC-tryck)
-- Timer pausar inte vid minimerat fönster
-- %→RPM-heuristik är fortfarande gissning (sensor.Name-baserad)
-- Splash-init sker på UI-tråden (1-3s frys)
+- The UI thread is still blocked by WMI calls (~20-200ms per tick)
+- UI panels are torn down and rebuilt every second (GC pressure)
+- Timer does not pause when the window is minimized
+- %→RPM heuristic is still a guess (sensor.Name-based)
+- Splash init runs on the UI thread (1-3s freeze)

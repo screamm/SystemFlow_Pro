@@ -1,37 +1,37 @@
-# Sprint 5 — Produktions-pipeline
+# Sprint 5 — Production pipeline
 
-**Mål:** Self-contained single-file build. GitHub Actions CI/CD. Automatisk crash-rapportering. Auto-update-mekanism. Tredjeparts-licenser korrekt dokumenterade. Repo-hygien.
+**Goal:** Self-contained single-file build. GitHub Actions CI/CD. Automatic crash reporting. Auto-update mechanism. Third-party licenses correctly documented. Repo hygiene.
 
-**Varaktighet:** 1-2 veckor (~40-50h)
+**Duration:** 1-2 weeks (~40-50h)
 **Branch:** `sprint-05-pipeline`
-**Målversion:** v1.1.0-rc.1
-**Förutsättningar:** Sprint 4 klar, all kod funktionellt komplett
+**Target version:** v1.1.0-rc.1
+**Prerequisites:** Sprint 4 complete, all code functionally complete
 
-**Utgångsläge:** Koden är redo men distributionen är amatörmässig — framework-dependent, osignerad, sex rediga build-scripts, releases/ committat i git.
+**Starting point:** The code is ready but distribution is amateurish — framework-dependent, unsigned, six messy build scripts, releases/ committed in git.
 
 ---
 
-## Sprintmål
+## Sprint goal
 
-- [ ] Ett enda `build.bat [version]` som producerar self-contained single-file exe
-- [ ] `.github/workflows/release.yml` triggar på tag push och skapar GitHub Release
-- [ ] Crash-reporter skriver till fil + skickar valfritt (opt-in) till insamlingstjänst
-- [ ] Auto-update check vid appstart mot GitHub Releases API
-- [ ] `THIRD_PARTY_LICENSES.txt` i distribution
-- [ ] README uppdaterad, FannyKnob-referenser borttagna, stämmer med faktisk build
-- [ ] `releases/` borttagen från git-historik (via `git filter-repo` eller BFG)
-- [ ] `scripts/claude_autonomous_loop.py` flyttad eller gitignored
-- [ ] SmartScreen-hantering dokumenterad för slutanvändare (osignerad distribution)
+- [ ] A single `build.bat [version]` that produces a self-contained single-file exe
+- [ ] `.github/workflows/release.yml` triggers on tag push and creates a GitHub Release
+- [ ] Crash reporter writes to file + optionally (opt-in) sends to a collection service
+- [ ] Auto-update check at app start against the GitHub Releases API
+- [ ] `THIRD_PARTY_LICENSES.txt` in the distribution
+- [ ] README updated, FannyKnob references removed, matches the actual build
+- [ ] `releases/` removed from git history (via `git filter-repo` or BFG)
+- [ ] `scripts/claude_autonomous_loop.py` moved or gitignored
+- [ ] SmartScreen handling documented for end users (unsigned distribution)
 
 ---
 
 ## Tasks
 
 ### T5.1 [P0] Self-contained single-file publish
-**Var:** `SystemMonitorApp.csproj` + nytt `build.bat`
-**Varför:** Nuvarande release kräver .NET 9 Runtime installerat. README ljuger.
-**Åtgärd:**
-Lägg till i csproj:
+**Where:** `SystemMonitorApp.csproj` + new `build.bat`
+**Why:** The current release requires .NET 9 Runtime to be installed. README lies.
+**Action:**
+Add to csproj:
 ```xml
 <PropertyGroup>
   <PublishSingleFile>true</PublishSingleFile>
@@ -44,18 +44,18 @@ Lägg till i csproj:
   <InvariantGlobalization>false</InvariantGlobalization>
 </PropertyGroup>
 ```
-Publish-kommando:
+Publish command:
 ```
 dotnet publish -c Release -r win-x64 --self-contained true -o publish\
 ```
-Förväntat resultat: ~70-90 MB single-file .exe utan externa DLL:er.
-**DoD:** Flytta .exe:n till en clean Windows-maskin utan .NET 9 installerat → startar.
-**Estimat:** 3h
+Expected result: ~70-90 MB single-file .exe with no external DLLs.
+**DoD:** Move the .exe to a clean Windows machine without .NET 9 installed → starts.
+**Estimate:** 3h
 
-### T5.2 [P0] Konsolidera build-scripts
-**Var:** Ta bort `build.bat`, `build_release_v1.0.2.bat` till `build_release_v1.0.8.bat`. Skapa nytt `build.bat`.
-**Varför:** Sex scripts skapar förvirring.
-**Åtgärd:** Nytt `build.bat`:
+### T5.2 [P0] Consolidate build scripts
+**Where:** Remove `build.bat`, `build_release_v1.0.2.bat` through `build_release_v1.0.8.bat`. Create a new `build.bat`.
+**Why:** Six scripts create confusion.
+**Action:** New `build.bat`:
 ```batch
 @echo off
 setlocal
@@ -77,29 +77,29 @@ copy THIRD_PARTY_LICENSES.txt publish\v%VERSION%\
 
 echo Done: publish\v%VERSION%\SystemFlow-Pro.exe
 ```
-**DoD:** `build.bat 1.1.0` producerar exe + zip.
-**Estimat:** 2h
+**DoD:** `build.bat 1.1.0` produces exe + zip.
+**Estimate:** 2h
 
-### T5.3 [AVFÖRT] Code signing
-**Status:** Ej planerat. SystemFlow Pro distribueras osignerat som öppen källkod.
+### T5.3 [DECLINED] Code signing
+**Status:** Not planned. SystemFlow Pro is distributed unsigned as open source.
 
-**Motivering:** Code signing-certifikat kostar 200-500 USD/år (OV eller EV) och
-projektet är gratis. Användare kan granska all kod på GitHub istället.
-SmartScreen-varningen hanteras via "Mer info" → "Kör ändå" och minskar
-gradvis när fler användare nedladdar och verifierar appen.
+**Rationale:** Code signing certificates cost 200-500 USD/year (OV or EV) and
+the project is free. Users can review all code on GitHub instead.
+The SmartScreen warning is handled via "More info" → "Run anyway" and decreases
+gradually as more users download and verify the app.
 
-**Dokumentation:** README och `docs/FAQ.md` förklarar SmartScreen-beteendet
-för slutanvändare. Release-workflow producerar osignerade artefakter.
+**Documentation:** README and `docs/FAQ.md` explain the SmartScreen behavior
+for end users. The release workflow produces unsigned artifacts.
 
-### T5.4 [P0] `DispatcherUnhandledException` (om inte klar från Sprint 1) + crash-reporter
-**Var:** `App.xaml.cs` + ny `Services/CrashReporter.cs`
-**Åtgärd:** Bygg vidare på Logger från Sprint 1. Lägg till:
-- Vid unhandled exception: skriv detaljerad crash-dump till `%APPDATA%\SystemFlow Pro\crashes\crash-{timestamp}.txt`
-- Inkludera: stack trace, OS-version, .NET-version, hårdvarubasinfo, settings-dump
-- Visa dialog: "Appen kraschade. Rapporten har sparats. Vill du skicka den till utvecklaren? [Ja/Nej]"
-- Vid "Ja": antingen email-link (`mailto:` med filen som bifogad är inte möjligt, använd clipboard-kopia + öppen GitHub Issues-URL) ELLER skicka till en enkel endpoint
+### T5.4 [P0] `DispatcherUnhandledException` (if not complete from Sprint 1) + crash reporter
+**Where:** `App.xaml.cs` + new `Services/CrashReporter.cs`
+**Action:** Build on the Logger from Sprint 1. Add:
+- On unhandled exception: write a detailed crash dump to `%APPDATA%\SystemFlow Pro\crashes\crash-{timestamp}.txt`
+- Include: stack trace, OS version, .NET version, hardware basic info, settings dump
+- Show dialog: "The app crashed. The report has been saved. Do you want to send it to the developer? [Yes/No]"
+- On "Yes": either email link (`mailto:` with the file attached is not possible, use clipboard copy + open GitHub Issues URL) OR send to a simple endpoint
 
-Enklaste fullständig lösning: Sentry.io — gratis-tier räcker för soloprojekt:
+Easiest complete solution: Sentry.io — the free tier is sufficient for a solo project:
 ```xml
 <PackageReference Include="Sentry" Version="5.0.*" />
 ```
@@ -107,17 +107,17 @@ Enklaste fullständig lösning: Sentry.io — gratis-tier räcker för soloproje
 SentrySdk.Init(o => {
     o.Dsn = "https://...@sentry.io/...";
     o.Release = $"systemflow-pro@{version}";
-    o.SendDefaultPii = false; // viktigt för GDPR
+    o.SendDefaultPii = false; // important for GDPR
 });
 ```
 Opt-in via settings: `SendDiagnosticsToDeveloper = false` default.
-**DoD:** Testvis kasta en exception → crashdump skrivs. Om Sentry används → syns i dashboard.
-**Estimat:** 4h
+**DoD:** Throw a test exception → crash dump is written. If Sentry is used → appears in the dashboard.
+**Estimate:** 4h
 
-### T5.5 [P0] Auto-update-check
-**Var:** Ny fil `Services/UpdateChecker.cs`
-**Varför:** Utan auto-update hamnar användare på gamla versioner. Nya versioner med viktiga fixar når inte fram.
-**Åtgärd:** Enkel version: vid appstart, efter 5s fördröjning:
+### T5.5 [P0] Auto-update check
+**Where:** New file `Services/UpdateChecker.cs`
+**Why:** Without auto-update, users end up on old versions. New versions with important fixes do not reach them.
+**Action:** Simple version: at app start, after 5s delay:
 ```csharp
 public async Task<UpdateInfo?> CheckForUpdatesAsync()
 {
@@ -134,17 +134,17 @@ public async Task<UpdateInfo?> CheckForUpdatesAsync()
     return null;
 }
 ```
-Vid tillgänglig uppdatering: icke-blockerande toast/banner i header "Ny version 1.1.1 tillgänglig [Hämta]". Klick öppnar GitHub Release-sidan i browser.
+When an update is available: non-blocking toast/banner in the header "New version 1.1.1 available [Download]". Click opens the GitHub Release page in the browser.
 
-Mer avancerat (valfritt): integrera Squirrel.Windows för helt automatisk nedladdning + patching.
-**DoD:** Kan testa med hårdkodad lägre version → banner visas. Verkliga versionsjämförelser fungerar.
-**Estimat:** 4h
+More advanced (optional): integrate Squirrel.Windows for fully automatic download + patching.
+**DoD:** Can be tested with a hardcoded lower version → banner is shown. Actual version comparisons work.
+**Estimate:** 4h
 
 ### T5.6 [P0] GitHub Actions CI/CD
-**Var:** Nya filer `.github/workflows/ci.yml` + `.github/workflows/release.yml`
-**Åtgärd:**
+**Where:** New files `.github/workflows/ci.yml` + `.github/workflows/release.yml`
+**Action:**
 
-`ci.yml` (kör vid varje push/PR):
+`ci.yml` (runs on every push/PR):
 ```yaml
 name: CI
 on: [push, pull_request]
@@ -163,7 +163,7 @@ jobs:
         with: { name: test-results, path: '**/test-results.trx' }
 ```
 
-`release.yml` (triggar på tag `v*`):
+`release.yml` (triggers on tag `v*`):
 ```yaml
 name: Release
 on:
@@ -188,41 +188,41 @@ jobs:
           files: SystemFlow-Pro-v*.zip
           generate_release_notes: true
 ```
-**DoD:** Push tag `v1.0.11` (test) → GitHub Actions kör, artefakt + release skapas automatiskt.
-**Estimat:** 6h
+**DoD:** Push tag `v1.0.11` (test) → GitHub Actions runs, artifact + release created automatically.
+**Estimate:** 6h
 
 ### T5.7 [P1] THIRD_PARTY_LICENSES.txt
-**Var:** Ny fil `THIRD_PARTY_LICENSES.txt`
-**Åtgärd:** Inkludera:
-- LibreHardwareMonitorLib 0.9.4 — MPL 2.0 (full licenstext + källkodsreferens)
+**Where:** New file `THIRD_PARTY_LICENSES.txt`
+**Action:** Include:
+- LibreHardwareMonitorLib 0.9.4 — MPL 2.0 (full license text + source code reference)
 - System.Management — MIT (Microsoft)
-- .NET 9 Runtime (om self-contained distributeras) — MIT
-- Segoe Fluent Icons — ingår i Windows, ingen särskild notis men nämn
-Automatisera via `dotnet-project-licenses` eller manuellt.
-**DoD:** Filen inkluderas i build-outputs (se T5.2).
-**Estimat:** 2h
+- .NET 9 Runtime (if self-contained is distributed) — MIT
+- Segoe Fluent Icons — included in Windows, no separate notice required but mention
+Automate via `dotnet-project-licenses` or manually.
+**DoD:** The file is included in build outputs (see T5.2).
+**Estimate:** 2h
 
-### T5.8 [P1] README-uppdatering
-**Var:** `README.md`
-**Åtgärd:**
-- Ta bort "FannyKnob"-referenser
-- Ta bort `publish-true-single\`-referens
-- Uppdatera installations-instruktion till faktisk path
-- Markera självcontained-krav korrekt ("ingen .NET-installation krävs" — nu sant)
-- Lägg till screenshot från Sprint 4
-- Lägg till sektion "Feedback & buggar" → GitHub Issues-länk
-- Versionsnummer i badge: `v1.1.0`
-**DoD:** README stämmer med faktisk distribution.
-**Estimat:** 2h
+### T5.8 [P1] README update
+**Where:** `README.md`
+**Action:**
+- Remove "FannyKnob" references
+- Remove `publish-true-single\` reference
+- Update installation instructions to actual path
+- Mark self-contained requirement correctly ("no .NET installation required" — now true)
+- Add screenshot from Sprint 4
+- Add section "Feedback & bugs" → GitHub Issues link
+- Version number in badge: `v1.1.0`
+**DoD:** README matches the actual distribution.
+**Estimate:** 2h
 
-### T5.9 [P1] Ta bort `releases/` från git-historik
-**Var:** Hela git-historiken
-**Varför:** 50-138 MB per version × 8 versioner = ~800 MB i historik. Saktar ner kloning.
-**Åtgärd:**
+### T5.9 [P1] Remove `releases/` from git history
+**Where:** The entire git history
+**Why:** 50-138 MB per version × 8 versions = ~800 MB in history. Slows down cloning.
+**Action:**
 ```bash
-# Installera git-filter-repo först
+# Install git-filter-repo first
 pip install git-filter-repo
-# Eller använd BFG: https://rtyley.github.io/bfg-repo-cleaner/
+# Or use BFG: https://rtyley.github.io/bfg-repo-cleaner/
 
 git clone --mirror https://github.com/screamm/SystemFlow_Pro systemflow.git
 cd systemflow.git
@@ -230,57 +230,57 @@ git filter-repo --path releases --invert-paths
 git push --force --all
 git push --force --tags
 ```
-**VARNING:** Detta skriver om historiken. Koordinera med ev. andra klones/forks.
-**DoD:** `git clone` är nu <20 MB. Historiken innehåller ingen `releases/`-mapp.
-**Estimat:** 2h
+**WARNING:** This rewrites history. Coordinate with any other clones/forks.
+**DoD:** `git clone` is now <20 MB. History contains no `releases/` folder.
+**Estimate:** 2h
 
-### T5.10 [P1] `.gitignore` uppdatering
-**Var:** `.gitignore`
-**Åtgärd:**
-- Kontrollera att `[Rr]eleases/` fungerar (kan vara att filer committats före pattern-tillägg)
-- Lägg till `publish/`, `*.pfx`, `settings.local.json`
-- Lägg till `scripts/` (claude_autonomous_loop hör inte hit) eller flytta filerna till `.dev/` och gitignorea det
-**DoD:** `git status` efter `dotnet publish` visar inga nya spårade filer.
-**Estimat:** 0.5h
+### T5.10 [P1] `.gitignore` update
+**Where:** `.gitignore`
+**Action:**
+- Verify that `[Rr]eleases/` works (files may have been committed before the pattern was added)
+- Add `publish/`, `*.pfx`, `settings.local.json`
+- Add `scripts/` (claude_autonomous_loop does not belong here) or move the files to `.dev/` and gitignore it
+**DoD:** `git status` after `dotnet publish` shows no new tracked files.
+**Estimate:** 0.5h
 
-### T5.11 [P2] Privacy/datainsamling-policy
-**Var:** Ny fil `PRIVACY.md`
-**Varför:** Appen samlar hårdvaruinfo + username. Om Sentry eller annan telemetri aktiveras måste det dokumenteras.
-**Åtgärd:** Kort dokument:
-- Vilken data appen läser lokalt (CPU-namn, GPU-namn, sensorer, OS-version, username)
-- Vilken data som lämnar maskinen (ingen per default — om Sentry aktiveras: stack traces + OS-version)
-- Om användaren aktiverar crash reports: vad skickas
-- GDPR-relevanta punkter
-**DoD:** Länkad från About-dialog och README.
-**Estimat:** 1h
+### T5.11 [P2] Privacy/data collection policy
+**Where:** New file `PRIVACY.md`
+**Why:** The app collects hardware info + username. If Sentry or other telemetry is enabled, it must be documented.
+**Action:** Short document:
+- What data the app reads locally (CPU name, GPU name, sensors, OS version, username)
+- What data leaves the machine (none by default — if Sentry is enabled: stack traces + OS version)
+- If the user enables crash reports: what is sent
+- GDPR-relevant points
+**DoD:** Linked from the About dialog and README.
+**Estimate:** 1h
 
-### T5.12 [P2] Changelog-komplement
-**Var:** Skapa `CHANGELOG_v1.0.6.md`, `CHANGELOG_v1.0.7.md`, `CHANGELOG_v1.0.8.md`, `CHANGELOG_v1.1.0.md`
-**Åtgärd:** Rekonstruera från git-log vad som ändrats i de saknade versionerna. För v1.1.0: sammanfatta alla Sprint 1-5 ändringar.
-**DoD:** Komplett changelog-kedja från v1.0.2 till v1.1.0.
-**Estimat:** 2h
+### T5.12 [P2] Changelog supplement
+**Where:** Create `CHANGELOG_v1.0.6.md`, `CHANGELOG_v1.0.7.md`, `CHANGELOG_v1.0.8.md`, `CHANGELOG_v1.1.0.md`
+**Action:** Reconstruct from git log what was changed in the missing versions. For v1.1.0: summarize all Sprint 1-5 changes.
+**DoD:** Complete changelog chain from v1.0.2 to v1.1.0.
+**Estimate:** 2h
 
-### T5.13 [P2] SmartScreen-varning-dokumentation
-**Var:** README + FAQ
-**Åtgärd:** Förklara att appen är osignerad öppen källkod, att SmartScreen varnar av den anledningen, och att användaren kan klicka "Mer info → Kör ändå" efter att ha granskat koden på GitHub om önskat.
-**DoD:** Trouble-shooting-sektion i README.
-**Estimat:** 0.5h
+### T5.13 [P2] SmartScreen warning documentation
+**Where:** README + FAQ
+**Action:** Explain that the app is unsigned open source, that SmartScreen warns for that reason, and that the user can click "More info → Run anyway" after reviewing the code on GitHub if desired.
+**DoD:** Troubleshooting section in README.
+**Estimate:** 0.5h
 
-### T5.14 [P3] `LICENSE`-fil i root
-**Var:** Ny fil `LICENSE`
-**Åtgärd:** Bestäm licens (MIT rekommenderat). Kopiera standardtext. Uppdatera README.
-**DoD:** Filen existerar, README refererar korrekt licens.
-**Estimat:** 0.5h
-
----
-
-## Risk & beroenden
-
-- **T5.3 (Code signing)** avfört — inga externa beroenden på leveranstid.
-- **T5.9 (git history rewrite)** är destruktiv — ta komplett backup av repot innan.
-- **T5.6 (CI/CD)** kan avslöja build-problem som bara syntes lokalt (path-skillnader, encoding, etc). Räkna med debugging.
-- Sentry.io kräver gratis-konto — setup tar en timme.
+### T5.14 [P3] `LICENSE` file in root
+**Where:** New file `LICENSE`
+**Action:** Decide on license (MIT recommended). Copy standard text. Update README.
+**DoD:** The file exists, README references the license correctly.
+**Estimate:** 0.5h
 
 ---
 
-## Retro (fyll i efter sprint)
+## Risk & dependencies
+
+- **T5.3 (Code signing)** declined — no external dependencies on delivery time.
+- **T5.9 (git history rewrite)** is destructive — take a complete backup of the repo before.
+- **T5.6 (CI/CD)** may reveal build issues that only appeared locally (path differences, encoding, etc.). Expect debugging.
+- Sentry.io requires a free account — setup takes an hour.
+
+---
+
+## Retrospective (fill in after sprint)

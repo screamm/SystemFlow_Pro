@@ -1,156 +1,156 @@
-# SystemFlow Pro — QA-checklista
+# SystemFlow Pro — QA Checklist
 
-**Gäller version:** v1.1.0-rc.1 → v1.1.0
-**Ansvar:** Alla punkter godkända på minst 3 hårdvarukonfigurationer innan
-v1.1.0-tag pushas till `main`.
+**Applies to version:** v1.1.0-rc.1 → v1.1.0
+**Responsibility:** All items must pass on at least 3 hardware configurations before
+the v1.1.0 tag is pushed to `main`.
 
-## Hårdvara att testa
+## Hardware to test
 
-**Obligatoriskt (minst 1 per grupp):**
+**Mandatory (at least 1 per group):**
 
-- [ ] **Modern AMD** — Ryzen 7000-serie eller nyare
+- [ ] **Modern AMD** — Ryzen 7000 series or newer
 - [ ] **Modern Intel** — 12th/13th/14th gen (E-cores + P-cores)
-- [ ] **Windows 10 22H2** — senaste Win10-versionen
-- [ ] **Windows 11 23H2 eller 24H2** — senaste Win11-versionen
-- [ ] **Ett NVIDIA GPU-system** (RTX 30/40-serie eller nyare)
+- [ ] **Windows 10 22H2** — latest Win10 version
+- [ ] **Windows 11 23H2 or 24H2** — latest Win11 version
+- [ ] **An NVIDIA GPU system** (RTX 30/40 series or newer)
 
-**Valfritt men värdefullt:**
+**Optional but valuable:**
 
 - [ ] AMD Radeon GPU
-- [ ] Äldre Intel CPU (10th gen eller tidigare) — testar fallback
-- [ ] Äldre AMD CPU (5000-serie eller tidigare)
-- [ ] Laptop med hybrid-grafik (iGPU + dGPU)
-- [ ] Desktop med AIO-kylare (pumpsensor)
-- [ ] Desktop med många chassifläktar (5+)
+- [ ] Older Intel CPU (10th gen or earlier) — tests fallback
+- [ ] Older AMD CPU (5000 series or earlier)
+- [ ] Laptop with hybrid graphics (iGPU + dGPU)
+- [ ] Desktop with AIO cooler (pump sensor)
+- [ ] Desktop with many chassis fans (5+)
 
-## Test per konfiguration
+## Test per configuration
 
-### A. Installation & start
+### A. Installation & startup
 
-- [ ] Ladda ner `SystemFlow-Pro-v1.1.0-rc.1-win-x64.zip`
-- [ ] Packa upp till ny mapp
-- [ ] SmartScreen-varning visas (förväntat — appen distribueras osignerat som
-      öppen källkod) — "Mer info" → "Kör ändå" fungerar
-- [ ] Appen startar utan admin-prompt
-- [ ] Splash visas i 0.8–2 sekunder
-- [ ] Huvudfönstret öppnas centrerat på primär skärm
-- [ ] Inga felmeddelanden vid start
+- [ ] Download `SystemFlow-Pro-v1.1.0-rc.1-win-x64.zip`
+- [ ] Extract to a new folder
+- [ ] SmartScreen warning appears (expected — the app is distributed unsigned as
+      open source) — "More info" → "Run anyway" works
+- [ ] The app starts without an admin prompt
+- [ ] Splash shows for 0.8–2 seconds
+- [ ] The main window opens centered on the primary screen
+- [ ] No error messages at startup
 
-### B. Dataflöde & korrekthet
+### B. Data flow & correctness
 
-- [ ] CPU-värde (hero-kort) matchar Task Manager inom ±5%
-- [ ] GPU-värde matchar MSI Afterburner eller Task Manager inom ±5%
-- [ ] RAM-värde matchar Task Manager inom ±0.5 GB
-- [ ] Temperaturer visas med rimliga värden (inga 0°C, inga >120°C utom kritiska)
-- [ ] CPU-kärnor visas per kärna (upp till 16)
-- [ ] Kärnanvändning färgkodas korrekt (<60% accent, 60-80% warn, >80% error)
-- [ ] Termalpaneler visar minst CPU + GPU temperatur
-- [ ] Fläkt-RPM visas korrekt (jämför med BIOS eller fan controller)
-- [ ] Zero-RPM GPU-fläkt visar "Zero RPM Mode" (inte "0 RPM" med fel färg)
-- [ ] Om admin ej körs: fläktpanelerna nämner "Administratörsbehörighet: Nej"
-- [ ] Hårdvaru-Info panelen visar korrekt CPU-namn, kärnantal, OS-version
+- [ ] CPU value (hero card) matches Task Manager within ±5%
+- [ ] GPU value matches MSI Afterburner or Task Manager within ±5%
+- [ ] RAM value matches Task Manager within ±0.5 GB
+- [ ] Temperatures display reasonable values (no 0°C, no >120°C except critical)
+- [ ] CPU cores displayed per core (up to 16)
+- [ ] Core usage color-coded correctly (<60% accent, 60-80% warn, >80% error)
+- [ ] Thermal panels show at least CPU + GPU temperature
+- [ ] Fan RPM displayed correctly (compare with BIOS or fan controller)
+- [ ] Zero-RPM GPU fan shows "Zero RPM Mode" (not "0 RPM" with the wrong color)
+- [ ] If not running as admin: the fan panels mention "Administrator privileges: No"
+- [ ] The Hardware Info panel shows the correct CPU name, core count, OS version
 
 ### C. UI / UX
 
-- [ ] Alla 4 hero-kort renderar utan klippning på 1920×1080
-- [ ] Fönstret ryms på 1366×768 (minimum-stöd)
-- [ ] WindowChrome: dubbelklick på titelbar maximerar/återställer
-- [ ] Win+↑ maximerar, Win+↓ minimerar
-- [ ] Win+Z visar Snap Layouts (Windows 11)
-- [ ] Drag till skärmkant snappar (Aero Snap)
-- [ ] Settings-ikonen (⚙) öppnar Settings-dialogen
-- [ ] Info-ikonen (🛈) öppnar About-dialogen
-- [ ] Minimera/Maximera/Stäng-knappar fungerar
-- [ ] Hover på hero-kort visar tooltips
-- [ ] Inga multicolored emoji synliga i UI
-- [ ] Font-rendering ser skarp ut på 100%, 125%, 150%, 200% DPI
+- [ ] All 4 hero cards render without clipping at 1920×1080
+- [ ] The window fits on 1366×768 (minimum supported)
+- [ ] WindowChrome: double-clicking the title bar maximizes/restores
+- [ ] Win+↑ maximizes, Win+↓ minimizes
+- [ ] Win+Z shows Snap Layouts (Windows 11)
+- [ ] Drag to screen edge snaps (Aero Snap)
+- [ ] The Settings icon (⚙) opens the Settings dialog
+- [ ] The Info icon (🛈) opens the About dialog
+- [ ] Minimize/Maximize/Close buttons work
+- [ ] Hover on hero cards shows tooltips
+- [ ] No multicolored emoji visible in the UI
+- [ ] Font rendering looks sharp at 100%, 125%, 150%, 200% DPI
 
 ### D. Accessibility
 
-- [ ] Narrator (Win+Ctrl+Enter) läser "CPU belastning aktuellt värde" på CPU-kortet
-- [ ] Narrator läser "Minimera fönster" på min-knappen
-- [ ] Tab cyklar genom Settings → About → Minimize → Maximize → Close i den ordningen
-- [ ] Fokuserad knapp har synlig fokus-outline (streckad accent-färg)
-- [ ] High-contrast-läge bryter inte layout (Windows-inställning "Enable high contrast")
+- [ ] Narrator (Win+Ctrl+Enter) reads "CPU load current value" on the CPU card
+- [ ] Narrator reads "Minimize window" on the minimize button
+- [ ] Tab cycles through Settings → About → Minimize → Maximize → Close in that order
+- [ ] Focused button has a visible focus outline (dashed accent color)
+- [ ] High-contrast mode does not break the layout (Windows setting "Enable high contrast")
 
-### E. Settings-dialog
+### E. Settings dialog
 
-- [ ] Öppnar centrerat över huvudfönstret
-- [ ] Default-värden: 2000ms, Celsius, pausa=Ja, starta-minimerad=Nej
-- [ ] Välj 500ms → Spara → tickar ökar till dubbelt så fort
-- [ ] Välj 5000ms → Spara → tickar saktar ner
-- [ ] Välj °F → Spara → (visuell verifiering — Sprint 4 gör detta i rendering)
-- [ ] Avbryt ändrar ingenting
-- [ ] Settings.json skrivs till `%APPDATA%\SystemFlow Pro\settings.json`
+- [ ] Opens centered over the main window
+- [ ] Default values: 2000ms, Celsius, pause=Yes, start-minimized=No
+- [ ] Select 500ms → Save → ticks speed up to twice as fast
+- [ ] Select 5000ms → Save → ticks slow down
+- [ ] Select °F → Save → (visual verification — Sprint 4 does this in rendering)
+- [ ] Cancel changes nothing
+- [ ] Settings.json is written to `%APPDATA%\SystemFlow Pro\settings.json`
 
-### F. About-dialog
+### F. About dialog
 
-- [ ] Visar korrekt version "v1.1.0-rc.1" eller nyare
-- [ ] Visar bygge-datum (inte 1970-01-01 / placeholder)
-- [ ] GitHub-länk öppnar webbläsare
-- [ ] Issue-länk öppnar webbläsare
-- [ ] Licenstext synlig
-- [ ] OK-knapp stänger dialogen
+- [ ] Shows the correct version "v1.1.0-rc.1" or newer
+- [ ] Shows the build date (not 1970-01-01 / placeholder)
+- [ ] GitHub link opens the browser
+- [ ] Issue link opens the browser
+- [ ] License text visible
+- [ ] OK button closes the dialog
 
-### G. Livslängd & prestanda
+### G. Longevity & performance
 
-- [ ] Kontinuerlig körning 30 min utan krasch
-- [ ] CPU-användning enligt Task Manager: <5% under polling
-- [ ] Minne (i Task Manager för `SystemFlow-Pro.exe`): ökar inte över 30 min
-      (ingen läcka)
-- [ ] Minimera → CPU-användning faller till ~0% (timer pausad)
-- [ ] Återställ → tickar återupptas inom 1-2 sekunder
-- [ ] Stäng (×) → processen försvinner från Task Manager inom 2 sekunder
+- [ ] Continuous run for 30 min without a crash
+- [ ] CPU usage per Task Manager: <5% during polling
+- [ ] Memory (in Task Manager for `SystemFlow-Pro.exe`): does not grow over 30 min
+      (no leak)
+- [ ] Minimize → CPU usage drops to ~0% (timer paused)
+- [ ] Restore → ticks resume within 1-2 seconds
+- [ ] Close (×) → the process disappears from Task Manager within 2 seconds
 
-### H. Robusthet
+### H. Robustness
 
-- [ ] Dra ur USB-enhet mitt under polling — ingen krasch
-- [ ] Flytta fönstret över två skärmar — rendering förblir korrekt
-- [ ] Byt DPI under körning (om möjligt) — layout rekomposerar rimligt
-- [ ] Kör samtidigt som annan hårdvaruövervakare (HWiNFO64 / MSI Afterburner) —
-      ingen konflikt
-- [ ] Stäng internet → appen kör fortfarande (bara update-check misslyckas tyst)
+- [ ] Unplug a USB device mid-polling — no crash
+- [ ] Move the window across two screens — rendering remains correct
+- [ ] Change DPI during runtime (if possible) — layout recomposes reasonably
+- [ ] Run simultaneously with another hardware monitor (HWiNFO64 / MSI Afterburner) —
+      no conflict
+- [ ] Disable internet → the app still runs (only the update check fails silently)
 
-### I. Loggar
+### I. Logs
 
-- [ ] `%APPDATA%\SystemFlow Pro\logs\app-{datum}.log` skapas
-- [ ] Innehåller startup-rad med version + OS
-- [ ] Vid testvis framkallad krasch: stack trace skrivs
-- [ ] Rotation fungerar när filen överskrider 5 MB (simulera via fil-storlek)
+- [ ] `%APPDATA%\SystemFlow Pro\logs\app-{date}.log` is created
+- [ ] Contains a startup row with version + OS
+- [ ] On a test-triggered crash: stack trace is written
+- [ ] Rotation works when the file exceeds 5 MB (simulate via file size)
 
-### J. Avinstallation
+### J. Uninstallation
 
-- [ ] Radera programmappen → processen avslutas rent
-- [ ] Radera `%APPDATA%\SystemFlow Pro\` → inga spår kvar i registry eller
-      andra platser
+- [ ] Delete the program folder → the process exits cleanly
+- [ ] Delete `%APPDATA%\SystemFlow Pro\` → no traces left in the registry or
+      other locations
 
-## Regression-fokus (från review-kommentarer)
+## Regression focus (from review comments)
 
-Dessa var nya i v1.0.9+ — verifiera extra noga:
+These were new in v1.0.9+ — verify extra carefully:
 
-- [ ] Admin-prompt försvinner (tidigare `requireAdministrator`)
-- [ ] Ingen UI-frysning vid polling (Sprint 2 flyttade till bakgrundstråd)
-- [ ] Panel-flimmer borta (Sprint 2 cachade TextBlocks)
-- [ ] Aero Snap fungerar igen (Sprint 4 WindowChrome)
-- [ ] Fläktar visar rätt enhet — RPM vs % (Sprint 2 heuristik-fix)
+- [ ] Admin prompt is gone (previously `requireAdministrator`)
+- [ ] No UI freeze during polling (Sprint 2 moved it to a background thread)
+- [ ] Panel flicker gone (Sprint 2 cached TextBlocks)
+- [ ] Aero Snap works again (Sprint 4 WindowChrome)
+- [ ] Fans show the correct unit — RPM vs % (Sprint 2 heuristic fix)
 
-## Buggrapportering
+## Bug reporting
 
-Rapportera varje fel som en GitHub Issue med:
-- Hårdvarukonfiguration (CPU, GPU, RAM, moderkort)
-- OS-version
-- Steg för att reproducera
-- Innehåll från `%APPDATA%\SystemFlow Pro\logs\app-{datum}.log`
-- Skärmdump om relevant
+Report every defect as a GitHub Issue with:
+- Hardware configuration (CPU, GPU, RAM, motherboard)
+- OS version
+- Steps to reproduce
+- Content from `%APPDATA%\SystemFlow Pro\logs\app-{date}.log`
+- Screenshot if relevant
 
-## Godkänd-dokumentation
+## Approval documentation
 
-När alla punkter är godkända, skriv en rad per konfiguration:
+When all items pass, write one row per configuration:
 
 ```
-- [PASS] Ryzen 7 7700X + RTX 4070 + Win11 23H2 — testad 2026-05-XX av David
-- [PASS] Intel i7-13700K + RTX 3080 + Win10 22H2 — testad 2026-05-XX av Testare A
-- [PASS] Ryzen 5 5600 + RX 6700 XT + Win11 24H2 — testad 2026-05-XX av Testare B
+- [PASS] Ryzen 7 7700X + RTX 4070 + Win11 23H2 — tested 2026-05-XX by David
+- [PASS] Intel i7-13700K + RTX 3080 + Win10 22H2 — tested 2026-05-XX by Tester A
+- [PASS] Ryzen 5 5600 + RX 6700 XT + Win11 24H2 — tested 2026-05-XX by Tester B
 ```
 
-Tre PASS krävs för grönt ljus till v1.1.0.
+Three PASSes are required for the green light to v1.1.0.

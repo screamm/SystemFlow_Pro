@@ -17,7 +17,7 @@ public partial class AboutWindow : Window
         var version = assembly.GetName().Version?.ToString() ?? "unknown";
         VersionText.Text = $"v{version}";
 
-        BuildDateText.Text = $"Byggd: {GetBuildDate(assembly):yyyy-MM-dd}";
+        BuildDateText.Text = $"Built: {GetBuildDate(assembly):yyyy-MM-dd}";
     }
 
     private static DateTime GetBuildDate(Assembly assembly)

@@ -1,36 +1,36 @@
 # SystemFlow Pro - Changelog v1.0.3
 
-## Version 1.0.3 - Förbättrad Hårdvarudetektering (2025-09-10)
+## Version 1.0.3 - Improved Hardware Detection (2025-09-10)
 
-### 🚀 Nya Funktioner
+### 🚀 New Features
 
-#### Förbättrad Fläktdetektering för Äldre System
-- **Multipla Detektionsstrategier**: Implementerat fallback-system med 3 nivåer
-  1. LibreHardwareMonitor (primär)
+#### Improved Fan Detection for Older Systems
+- **Multiple Detection Strategies**: Implemented fallback system with 3 levels
+  1. LibreHardwareMonitor (primary)
   2. Windows WMI (Win32_Fan/Win32_TemperatureProbe)
-  3. Temperaturbaserad uppskattning (sista utväg)
+  3. Temperature-based estimation (last resort)
 
-- **Smart Administratörsdetektering**: Automatisk identifiering av admin-läge med användarguide
-- **Enhanced Error Messages**: Kontextuella förklaringar istället för generiska fel
+- **Smart Administrator Detection**: Automatic identification of admin mode with user guidance
+- **Enhanced Error Messages**: Contextual explanations instead of generic errors
 
-#### Temperaturbaserad Fläktuppskattning
+#### Temperature-Based Fan Estimation
 ```
-Temperatur → Uppskattad RPM:
-<40°C     → 800 RPM   (låg)
-40-50°C   → 1200 RPM  (medium)  
-50-65°C   → 2000 RPM  (hög)
-65-80°C   → 3000 RPM  (mycket hög)
+Temperature → Estimated RPM:
+<40°C     → 800 RPM   (low)
+40-50°C   → 1200 RPM  (medium)
+50-65°C   → 2000 RPM  (high)
+65-80°C   → 3000 RPM  (very high)
 >80°C     → 4000 RPM  (maximum)
 ```
 
-#### Förbättrad Hårdvarukompatibilitet
-- Bättre stöd för äldre GPU-drivrutiner som inte exponerar fläktdata
-- Förbättrad detektering av systemfläktar på äldre moderkort
-- WMI-integration för backup på system där LibreHardwareMonitor misslyckas
+#### Improved Hardware Compatibility
+- Better support for older GPU drivers that do not expose fan data
+- Improved detection of system fans on older motherboards
+- WMI integration as backup on systems where LibreHardwareMonitor fails
 
-### 🔧 Tekniska Implementationer
+### 🔧 Technical Implementations
 
-#### Nya Metoder i MainWindow.xaml.cs:
+#### New Methods in MainWindow.xaml.cs:
 ```csharp
 // Multi-strategy fan detection
 private async Task TryLibreHardwareMonitorFans(Dictionary<string, float> fans)
@@ -43,73 +43,73 @@ private string GetDetectionStatusMessage()
 private float EstimateFanSpeedFromTemperature(float temperature, string componentName)
 ```
 
-#### Nya Medlemsvariabler:
+#### New Member Variables:
 ```csharp
 private bool _isAdminMode = false;
 private Dictionary<string, string> _hardwareCapabilities = new Dictionary<string, string>();
 private Dictionary<string, DateTime> _lastFanDetection = new Dictionary<string, DateTime>();
 ```
 
-### 🛠️ Förbättringar
+### 🛠️ Improvements
 
 #### User Experience
-- **Status-indikatorer**: Visuella emojis (✅❌⚠️) för detektionsstatus
-- **Kontextuella meddelanden**: Specifik guidance baserat på systemkonfiguration
-- **Administratörshjälp**: Tydlig information om admin-läge och fördelar
+- **Status Indicators**: Visual emojis (✅❌⚠️) for detection status
+- **Contextual Messages**: Specific guidance based on system configuration
+- **Administrator Help**: Clear information about admin mode and benefits
 
-#### Robust Felhantering
-- **Graceful Degradation**: Applikationen fungerar även om vissa sensorer saknas
-- **Capability Tracking**: Spårar vilka metoder som fungerar per session
-- **Debug Logging**: Förbättrad felsökning med detaljerade meddelanden
+#### Robust Error Handling
+- **Graceful Degradation**: The application works even if certain sensors are missing
+- **Capability Tracking**: Tracks which methods work per session
+- **Debug Logging**: Improved troubleshooting with detailed messages
 
-### 📋 UI/UX-förändringar
+### 📋 UI/UX Changes
 
-#### Förbättrade Felmeddelanden
-**Innan (v1.0.2):**
+#### Improved Error Messages
+**Before (v1.0.2):**
 ```
-"Inga GPU-fläktar detekterade"
+"No GPU fans detected"
 ```
 
-**Efter (v1.0.3):**
+**After (v1.0.3):**
 ```
-"Inga GPU-fläktar detekterade
+"No GPU fans detected
 
-✅ Administratörsbehörighet: Ja
+✅ Administrator privileges: Yes
 
-Detektionsstatus:
+Detection status:
 ✅ LibreHardwareMonitor: Supported
 ❌ Windows WMI: Failed: Access denied
-✅ Temperaturbaserad uppskattning: Active
+✅ Temperature-based estimation: Active
 
-Detta är normalt på äldre system:
-• GPU-fläktar ej exponerade av drivrutin
-• Zero RPM Mode vid låga temperaturer
-• Passiv kylning
-• Rapporterar som procent istället för RPM"
+This is normal on older systems:
+• GPU fans not exposed by driver
+• Zero RPM Mode at low temperatures
+• Passive cooling
+• Reports as percent instead of RPM"
 ```
 
 ### 🔄 Breaking Changes
-Inga - fullt bakåtkompatibel med v1.0.2
+None - fully backward compatible with v1.0.2
 
-### 🐛 Bugfixes från v1.0.2
-- Förbättrad text-overflow hantering (från tidigare fix)
-- Bättre RPM-konvertering för äldre system (från tidigare fix)
+### 🐛 Bugfixes from v1.0.2
+- Improved text-overflow handling (from previous fix)
+- Better RPM conversion for older systems (from previous fix)
 
 ### 📦 Build Information
-- **Target Framework**: NET 9.0-Windows (samma som v1.0.2)
+- **Target Framework**: NET 9.0-Windows (same as v1.0.2)
 - **Dependencies**: 
   - LibreHardwareMonitorLib 0.9.4
-  - System.Management 9.0.0 (för WMI-stöd)
-- **Kompatibilitet**: Windows 10/11
+  - System.Management 9.0.0 (for WMI support)
+- **Compatibility**: Windows 10/11
 
 ### 🚨 Release Status
-**Source Code**: ✅ Komplett (version 1.0.3)  
-**Binary Build**: ⏳ Kräver manual build (release directory innehåller v1.0.2 binaries)
+**Source Code**: ✅ Complete (version 1.0.3)  
+**Binary Build**: ⏳ Requires manual build (release directory contains v1.0.2 binaries)
 
-För att få alla nya funktioner:
-1. Öppna `SystemMonitorApp.csproj` i Visual Studio
+To get all the new features:
+1. Open `SystemMonitorApp.csproj` in Visual Studio
 2. Build → Build Solution (Release mode)
-3. Eller se `releases/v1.0.3/BUILD_INFO.txt` för instruktioner
+3. Or see `releases/v1.0.3/BUILD_INFO.txt` for instructions
 
 ---
-**Sammanfattning**: v1.0.3 är en stor förbättring för äldre system som tidigare hade problem med fläktdetektering. Huvudfokus på kompatibilitet och användarvänlighet.
+**Summary**: v1.0.3 is a major improvement for older systems that previously had problems with fan detection. Main focus on compatibility and user-friendliness.

@@ -1,70 +1,70 @@
 @echo off
-echo Bygger SystemFlow Pro v1.0.2 Release med GPU RPM och temperatur fixes...
+echo Building SystemFlow Pro v1.0.2 Release with GPU RPM and temperature fixes...
 echo.
 
-REM Rensa gamla builds först
+REM Clean old builds first
 if exist "bin\Release" rmdir /s /q "bin\Release"
 if exist "obj\Release" rmdir /s /q "obj\Release"
 
-echo Rensar gamla artifacts...
+echo Cleaning old artifacts...
 echo.
 
-REM Försök med Visual Studio 2022 Community
+REM Try Visual Studio 2022 Community
 if exist "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" (
-    echo Använder Visual Studio 2022 Community MSBuild...
+    echo Using Visual Studio 2022 Community MSBuild...
     "C:\Program Files\Microsoft Visual Studio\2022\Community\MSBuild\Current\Bin\MSBuild.exe" SystemMonitorApp.csproj /p:Configuration=Release /restore
     goto :check_result
 )
 
-REM Försök med Visual Studio 2022 Professional
+REM Try Visual Studio 2022 Professional
 if exist "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe" (
-    echo Använder Visual Studio 2022 Professional MSBuild...
+    echo Using Visual Studio 2022 Professional MSBuild...
     "C:\Program Files\Microsoft Visual Studio\2022\Professional\MSBuild\Current\Bin\MSBuild.exe" SystemMonitorApp.csproj /p:Configuration=Release /restore
     goto :check_result
 )
 
-REM Försök med Build Tools
+REM Try Build Tools
 if exist "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" (
-    echo Använder Build Tools MSBuild...
+    echo Using Build Tools MSBuild...
     "C:\Program Files (x86)\Microsoft Visual Studio\2022\BuildTools\MSBuild\Current\Bin\MSBuild.exe" SystemMonitorApp.csproj /p:Configuration=Release /restore
     goto :check_result
 )
 
-echo VARNING: Kunde inte hitta MSBuild. Öppna projektet i Visual Studio istället.
-echo Dubbelklicka på SystemMonitorApp.csproj för att öppna i Visual Studio.
+echo WARNING: Could not find MSBuild. Open the project in Visual Studio instead.
+echo Double-click SystemMonitorApp.csproj to open in Visual Studio.
 pause
 exit /b 1
 
 :check_result
 echo.
 if exist "bin\Release\net9.0-windows\SystemFlow-Pro.exe" (
-    echo ✅ LYCKADES! SystemFlow Pro v1.0.2 Release är nu kompilerad.
+    echo SUCCESS! SystemFlow Pro v1.0.2 Release is now compiled.
     echo.
-    echo Skapar release-mapp...
+    echo Creating release folder...
     if not exist "releases" mkdir "releases"
     if not exist "releases\v1.0.2" mkdir "releases\v1.0.2"
-    
-    echo Kopierar filer till release-mappen...
+
+    echo Copying files to the release folder...
     xcopy "bin\Release\net9.0-windows\*" "releases\v1.0.2\" /s /e /i /y
-    
+
     echo.
-    echo 🎉 SystemFlow Pro v1.0.2 Release färdig!
+    echo SystemFlow Pro v1.0.2 Release ready!
     echo.
-    echo Fixes i denna version:
-    echo • GPU RPM x100 problem fixat (äldre system)
-    echo • CPU temperatur text klippning fixat
-    echo • Förbättrad sensor validering
-    echo • Bättre formatering för äldre hårdvara
+    echo Fixes in this version:
+    echo - GPU RPM x100 issue fixed (older systems)
+    echo - CPU temperature text clipping fixed
+    echo - Improved sensor validation
+    echo - Better formatting for older hardware
     echo.
-    echo Release finns i: releases\v1.0.2\
+    echo Release is located in: releases\v1.0.2\
     echo.
-    echo Vill du starta den nya versionen? (J/N)
+    echo Do you want to start the new version? (J/N)
     set /p choice=
     if /i "%choice%"=="J" start "" "releases\v1.0.2\SystemFlow-Pro.exe"
     if /i "%choice%"=="j" start "" "releases\v1.0.2\SystemFlow-Pro.exe"
 ) else (
-    echo ❌ Något gick fel vid byggandet.
-    echo Försök öppna SystemMonitorApp.csproj i Visual Studio och bygg manuellt.
+    echo Something went wrong during the build.
+    echo Try opening SystemMonitorApp.csproj in Visual Studio and build manually.
     if exist "bin\Release\net9.0-windows\" dir "bin\Release\net9.0-windows\"
 )
 

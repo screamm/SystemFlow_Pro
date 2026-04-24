@@ -56,7 +56,7 @@ namespace SystemMonitorApp.ViewModels
         public string GpuUsageDisplay => _snapshot.GpuUsagePercent >= 0 ? $"{_snapshot.GpuUsagePercent:F0}%" : "N/A";
         public string TemperatureDisplay => _snapshot.AverageTemperatureC > 0 ? $"{_snapshot.AverageTemperatureC:F0}°C" : "N/A";
         public string SystemStatusDisplay => _snapshot.SystemStatus;
-        public string LastUpdatedDisplay => $"Uppdaterad: {_snapshot.Timestamp:HH:mm:ss}";
+        public string LastUpdatedDisplay => $"Updated: {_snapshot.Timestamp:HH:mm:ss}";
         public bool IsAdminMode => _hardware.IsRunningAsAdmin;
         public string HardwareInfoText => _hardware.HardwareInfoText;
 

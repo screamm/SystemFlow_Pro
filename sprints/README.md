@@ -1,48 +1,48 @@
-# SystemFlow Pro — Sprint-plan mot v1.1 Production
+# SystemFlow Pro — Sprint plan toward v1.1 Production
 
-**Startversion:** v1.0.8.1
-**Målversion:** v1.1.0 (self-contained, produktionsredo, öppen källkod osignerad)
-**Total estimerad tid:** 6 sprints, ca 8-10 veckors deltidsarbete (solo)
+**Starting version:** v1.0.8.1
+**Target version:** v1.1.0 (self-contained, production-ready, open source unsigned)
+**Total estimated time:** 6 sprints, approx. 8-10 weeks part-time work (solo)
 
-## Sprintöversikt
+## Sprint overview
 
-| # | Sprint | Mål | Beräknad tid |
-|---|--------|-----|--------------|
-| 1 | [Stabilisering & säkerhet](sprint-01-stabilisering-sakerhet.md) | Fixa kritiska buggar (`.Result`, catch-block, admin, Accept-spam) | 1 vecka |
-| 2 | [Prestanda & resurshantering](sprint-02-prestanda.md) | UI-tråd frikopplad, GC-tryck halverat, inga läckor | 1 vecka |
-| 3 | [Arkitektur & testbarhet](sprint-03-arkitektur-tester.md) | HardwareService extraherad, MVVM-lite, första enhetstester | 2 veckor |
-| 4 | [UI/UX modernisering](sprint-04-ui-ux.md) | Fluent-ikoner, accessibility, fixat chrome, Settings | 2 veckor |
-| 5 | [Produktions-pipeline](sprint-05-produktions-pipeline.md) | Self-contained build, CI/CD, crash reporting, auto-update | 1-2 veckor |
-| 6 | [Release 1.1 & QA](sprint-06-release.md) | Beta, buggjakt, release | 1 vecka |
+| # | Sprint | Goal | Estimated time |
+|---|--------|------|----------------|
+| 1 | [Stabilization & security](sprint-01-stabilisering-sakerhet.md) | Fix critical bugs (`.Result`, catch blocks, admin, Accept spam) | 1 week |
+| 2 | [Performance & resource management](sprint-02-prestanda.md) | UI thread decoupled, GC pressure halved, no leaks | 1 week |
+| 3 | [Architecture & testability](sprint-03-arkitektur-tester.md) | HardwareService extracted, MVVM-lite, first unit tests | 2 weeks |
+| 4 | [UI/UX modernization](sprint-04-ui-ux.md) | Fluent icons, accessibility, fixed chrome, Settings | 2 weeks |
+| 5 | [Production pipeline](sprint-05-produktions-pipeline.md) | Self-contained build, CI/CD, crash reporting, auto-update | 1-2 weeks |
+| 6 | [Release 1.1 & QA](sprint-06-release.md) | Beta, bug hunting, release | 1 week |
 
-## Prioritetsnivåer (används i alla sprints)
+## Priority levels (used in all sprints)
 
-- **[P0]** Blockerare — sprint kan inte stängas utan detta
-- **[P1]** Hög — bör göras i sprint, kan skjutas max en sprint
-- **[P2]** Medel — trevligt att få med
-- **[P3]** Låg — backlog
+- **[P0]** Blocker — sprint cannot be closed without this
+- **[P1]** High — should be done in sprint, can be deferred max one sprint
+- **[P2]** Medium — nice to include
+- **[P3]** Low — backlog
 
-## Definition of Done (gäller alla sprints)
+## Definition of Done (applies to all sprints)
 
-1. Kod kompilerar utan varningar
-2. Appen startar och kör utan undantag i minst 15 minuter
-3. Alla nya/ändrade kodvägar manuellt testade på utvecklingsmaskin
-4. `git commit` med beskrivande meddelande per task
-5. Feature-branch merged till `main` via PR (självgranskning räcker, men separata commits)
-6. Inga nya tomma `catch {}`-block införda
-7. Inga nya multicolored emojis i UI-koden
+1. Code compiles without warnings
+2. App starts and runs without exceptions for at least 15 minutes
+3. All new/changed code paths manually tested on development machine
+4. `git commit` with descriptive message per task
+5. Feature branch merged to `main` via PR (self-review is sufficient, but separate commits)
+6. No new empty `catch {}` blocks introduced
+7. No new multicolored emojis in UI code
 
-## Versionsstrategi under sprints
+## Version strategy during sprints
 
-- Sprint 1 färdig → v1.0.9 (säkerhetsrelease)
-- Sprint 2 färdig → v1.0.10 (prestandarelease)
-- Sprint 3-4 färdiga → v1.1.0-beta.1
-- Sprint 5-6 färdiga → v1.1.0 (production)
+- Sprint 1 complete → v1.0.9 (security release)
+- Sprint 2 complete → v1.0.10 (performance release)
+- Sprints 3-4 complete → v1.1.0-beta.1
+- Sprints 5-6 complete → v1.1.0 (production)
 
-## Arbetsrutin per sprint
+## Work routine per sprint
 
-1. Skapa feature-branch `sprint-NN-kort-beskrivning`
-2. Gå igenom tasks i ordning — tidiga tasks låser upp senare
-3. Uppdatera `CHANGELOG_v1.0.X.md` löpande
-4. Stäng sprint med tag + release-notes i `releases/`
-5. Skapa en kort retro (1-3 bullets) i botten av sprint-filen när klar
+1. Create feature branch `sprint-NN-short-description`
+2. Work through tasks in order — early tasks unlock later ones
+3. Update `CHANGELOG_v1.0.X.md` continuously
+4. Close sprint with tag + release notes in `releases/`
+5. Create a short retro (1-3 bullets) at the bottom of the sprint file when complete

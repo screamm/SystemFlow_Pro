@@ -1,7 +1,7 @@
 <Window x:Class="SystemMonitorApp.Views.AboutWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Om SystemFlow Pro"
+        Title="About SystemFlow Pro"
         Height="560" Width="520"
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
@@ -128,16 +128,16 @@
                                    Foreground="{StaticResource AccentBrush}"
                                    FontWeight="SemiBold"
                                    Margin="0,2,0,0"
-                                   AutomationProperties.Name="Versionsnummer"/>
+                                   AutomationProperties.Name="Version number"/>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Build date -->
                 <TextBlock x:Name="BuildDateText"
-                           Text="Byggd: 2026-04-22"
+                           Text="Built: 2026-04-22"
                            Style="{StaticResource BodyText}"
                            Margin="0,10,0,16"
-                           AutomationProperties.Name="Byggdatum"/>
+                           AutomationProperties.Name="Build date"/>
 
                 <!-- Description -->
                 <Border Background="{StaticResource CardBrush}"
@@ -148,32 +148,32 @@
                         Margin="0,0,0,16">
                     <TextBlock Style="{StaticResource BodyText}"
                                Foreground="{StaticResource TextSecondaryBrush}"
-                               Text="Lätt och snabb systemövervakning för Windows. Visar CPU, GPU, minne, temperaturer och fläktar i realtid."/>
+                               Text="Lightweight and fast system monitoring for Windows. Displays CPU, GPU, memory, temperatures and fans in real time."/>
                 </Border>
 
                 <!-- Links -->
-                <TextBlock Text="Länkar" Style="{StaticResource SectionHeading}"/>
+                <TextBlock Text="Links" Style="{StaticResource SectionHeading}"/>
                 <StackPanel Margin="0,0,0,16">
                     <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,4">
                         <Run Text="GitHub: "/>
                         <Hyperlink NavigateUri="https://github.com/screamm/SystemFlow_Pro"
                                    RequestNavigate="Hyperlink_RequestNavigate"
-                                   AutomationProperties.Name="Öppna GitHub-repot">
+                                   AutomationProperties.Name="Open GitHub repository">
                             github.com/screamm/SystemFlow_Pro
                         </Hyperlink>
                     </TextBlock>
                     <TextBlock Style="{StaticResource BodyText}">
-                        <Run Text="Rapportera bug: "/>
+                        <Run Text="Report a bug: "/>
                         <Hyperlink NavigateUri="https://github.com/screamm/SystemFlow_Pro/issues"
                                    RequestNavigate="Hyperlink_RequestNavigate"
-                                   AutomationProperties.Name="Rapportera en bug på GitHub">
+                                   AutomationProperties.Name="Report a bug on GitHub">
                             github.com/screamm/SystemFlow_Pro/issues
                         </Hyperlink>
                     </TextBlock>
                 </StackPanel>
 
                 <!-- Third-party libraries -->
-                <TextBlock Text="Tredjepartsbibliotek" Style="{StaticResource SectionHeading}"/>
+                <TextBlock Text="Third-party libraries" Style="{StaticResource SectionHeading}"/>
                 <StackPanel Margin="0,0,0,16">
                     <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,4">
                         <Run Text="LibreHardwareMonitor 0.9.4 — "/>
@@ -192,17 +192,17 @@
                         </Hyperlink>
                     </TextBlock>
                     <TextBlock Style="{StaticResource BodyText}"
-                               Text="Segoe Fluent Icons — ingår i Windows"/>
+                               Text="Segoe Fluent Icons — included in Windows"/>
                 </StackPanel>
 
                 <!-- License -->
-                <TextBlock Text="Licens" Style="{StaticResource SectionHeading}"/>
+                <TextBlock Text="License" Style="{StaticResource SectionHeading}"/>
                 <TextBlock Style="{StaticResource BodyText}" Margin="0,0,0,8">
-                    <Run Text="Detta program är öppen källkod, MIT-licens. "/>
+                    <Run Text="This program is open source, MIT license. "/>
                     <Hyperlink NavigateUri="https://github.com/screamm/SystemFlow_Pro/blob/main/LICENSE"
                                RequestNavigate="Hyperlink_RequestNavigate"
-                               AutomationProperties.Name="Läs fullständig MIT-licens">
-                        Läs licensen
+                               AutomationProperties.Name="Read the full MIT license">
+                        Read the license
                     </Hyperlink>
                 </TextBlock>
 
@@ -222,7 +222,7 @@
                     IsDefault="True"
                     TabIndex="1"
                     Click="OkButton_Click"
-                    AutomationProperties.Name="Stäng Om-dialogen"/>
+                    AutomationProperties.Name="Close About dialog"/>
         </Border>
     </Grid>
 </Window>

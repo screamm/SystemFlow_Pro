@@ -1,196 +1,196 @@
-# SystemFlow Pro — Vanliga frågor (FAQ)
+# SystemFlow Pro — Frequently Asked Questions (FAQ)
 
-Lista över vanliga frågor och svar. Om din fråga inte finns här, öppna gärna
-en [GitHub Issue](https://github.com/screamm/SystemFlow_Pro/issues).
+A list of common questions and answers. If your question is not here, please open
+a [GitHub Issue](https://github.com/screamm/SystemFlow_Pro/issues).
 
-## Installation & start
+## Installation & startup
 
-### Windows SmartScreen varnar "Windows har skyddat din dator"
+### Windows SmartScreen warns "Windows protected your PC"
 
-Det är för att .exe:n inte är signerad med ett betalt kodsignerings-certifikat.
-Klicka "Mer info" → "Kör ändå".
+This is because the .exe is not signed with a paid code-signing certificate.
+Click "More info" → "Run anyway".
 
-SystemFlow Pro distribueras osignerat som öppen källkod — kodsignering är
-inte planerat. Certifikat kostar 200-500 USD/år och projektet är gratis,
-öppet, och kan granskas rad för rad på
-[GitHub](https://github.com/screamm/SystemFlow_Pro) istället.
+SystemFlow Pro is distributed unsigned as open source — code signing is
+not planned. Certificates cost 200-500 USD/year and the project is free,
+open, and can be reviewed line by line on
+[GitHub](https://github.com/screamm/SystemFlow_Pro) instead.
 
-SmartScreen-varningen minskar gradvis när fler användare väljer "Kör ändå"
-och Microsoft bygger upp rykte baserat på hash-signatur av varje byggd exe.
+The SmartScreen warning gradually diminishes as more users choose "Run anyway"
+and Microsoft builds up reputation based on the hash signature of each built exe.
 
-### Kräver appen .NET-runtime?
+### Does the app require the .NET runtime?
 
-Nej. Den distribueras som self-contained single-file — all .NET-runtime är
-inbakad i exe:n. Ingen installation krävs.
+No. It is distributed as a self-contained single file — the entire .NET runtime is
+bundled into the exe. No installation required.
 
-Om du bygger själv med `dotnet build` behöver du .NET 9 SDK.
+If you build it yourself with `dotnet build`, you need the .NET 9 SDK.
 
-### Behöver jag köra som administratör?
+### Do I need to run as administrator?
 
-Nej. Appen körs som `asInvoker` sedan v1.0.9. Vissa hårdvarusensorer
-(särskilt MSR-läsningar på vissa CPU:er) kräver admin för full detaljnivå,
-men de flesta värden fungerar utan. Om en sensor saknas eller visar "N/A",
-prova att högerklicka .exe → "Kör som administratör".
+No. The app runs as `asInvoker` since v1.0.9. Some hardware sensors
+(particularly MSR readings on certain CPUs) require admin for full detail,
+but most values work without. If a sensor is missing or shows "N/A",
+try right-clicking the .exe → "Run as administrator".
 
-### Var installeras appen?
+### Where is the app installed?
 
-Ingenstans. Flytta .exe:n vart du vill (t.ex. `C:\Users\Dig\Program\SystemFlow Pro\`)
-och skapa en genväg. Det är en portabel applikation.
+Nowhere. Move the .exe wherever you like (e.g., `C:\Users\You\Programs\SystemFlow Pro\`)
+and create a shortcut. It is a portable application.
 
-Användarinställningar och loggar lagras i `%APPDATA%\SystemFlow Pro\`.
+User settings and logs are stored in `%APPDATA%\SystemFlow Pro\`.
 
-## Data & värden
+## Data & values
 
-### Varför visar min CPU 0°C?
+### Why does my CPU show 0°C?
 
-Inte alla CPU:er har temperatursensorer som LibreHardwareMonitor kan läsa.
-Särskilt äldre Intel CPU:er (10th gen eller tidigare) har begränsat stöd.
-Prova att starta appen som administratör — vissa CPU:er kräver det för
-temperaturåtkomst.
+Not all CPUs have temperature sensors that LibreHardwareMonitor can read.
+In particular, older Intel CPUs (10th gen or earlier) have limited support.
+Try starting the app as administrator — some CPUs require it for
+temperature access.
 
-Se `%APPDATA%\SystemFlow Pro\logs\app-{datum}.log` för detaljer om
-sensor-uppräkningen.
+See `%APPDATA%\SystemFlow Pro\logs\app-{date}.log` for details about
+sensor enumeration.
 
-### GPU-belastning visar "N/A"
+### GPU load shows "N/A"
 
-- Hybrid-grafik (laptop med iGPU + dGPU): dGPU kan vara helt avstängd när
-  den inte används → ingen sensor
-- Drivrutiner inte installerade eller föråldrade
-- GPU-drivrutinen exponerar inte load-sensor
+- Hybrid graphics (laptop with iGPU + dGPU): the dGPU may be fully powered down when
+  not in use → no sensor
+- Drivers not installed or outdated
+- The GPU driver does not expose a load sensor
 
-### Fläktar visas som "%"
+### Fans are displayed as "%"
 
-Det är en PWM-procent (Pulse Width Modulation) från moderkortets controller.
-Det är procent av max-PWM, inte procent av max-RPM. Moderkortet rapporterar
-inte RPM för denna fläkt, bara duty cycle.
+This is a PWM percentage (Pulse Width Modulation) from the motherboard's controller.
+It is a percentage of max PWM, not a percentage of max RPM. The motherboard does not
+report RPM for this fan, only duty cycle.
 
-Om fläkten också har en RPM-sensor visas båda rader. I Settings kan du filtrera
-(framtida version).
+If the fan also has an RPM sensor, both rows are displayed. In Settings you will be able to filter
+(future version).
 
-### "Zero RPM Mode" på GPU-fläkten
+### "Zero RPM Mode" on the GPU fan
 
-Moderna GPU:er (NVIDIA RTX 20+, AMD RX 6000+) stannar fläktarna när
-temperaturen är under ~55-60°C för tystare drift. Detta är normalt och bra —
-inga cykler på lager om det inte behövs. När GPU:n värms upp startar
-fläktarna automatiskt.
+Modern GPUs (NVIDIA RTX 20+, AMD RX 6000+) stop the fans when the
+temperature is below ~55-60°C for quieter operation. This is normal and good —
+no bearing cycles spent when not needed. When the GPU heats up, the fans
+start automatically.
 
-### RPM-värdena matchar inte BIOS
+### The RPM values do not match BIOS
 
-Möjliga orsaker:
-- Moderkortet rapporterar pulser/varv felaktigt (gamla moderkort)
-- Fläkten har inte 3-pin RPM-tråd (2-pin eller 4-pin utan pulse)
-- Moderkortet multiplicerar/delar RPM på okänt sätt
+Possible causes:
+- The motherboard reports pulses/revolution incorrectly (older motherboards)
+- The fan does not have a 3-pin RPM wire (2-pin or 4-pin without pulse)
+- The motherboard multiplies/divides RPM in an unknown way
 
-Jämför med BIOS i realtid för att fastställa vilken källa som är korrekt.
+Compare with BIOS in real time to determine which source is correct.
 
-### Minnesanvändningen skiljer sig från Task Manager
+### Memory usage differs from Task Manager
 
-SystemFlow Pro visar "% total" baserat på `Available MBytes` från Windows
-Performance Counters. Task Manager kan visa olika värden beroende på vilken
-flik (Processes vs Performance) och om "Compressed" räknas in.
+SystemFlow Pro shows "% total" based on `Available MBytes` from Windows
+Performance Counters. Task Manager may show different values depending on which
+tab (Processes vs Performance) and whether "Compressed" is included.
 
-Skillnaden är normalt 1-3%.
+The difference is normally 1-3%.
 
-## Inställningar
+## Settings
 
-### Var lagras mina inställningar?
+### Where are my settings stored?
 
-`%APPDATA%\SystemFlow Pro\settings.json`. Öppna i en text-editor för manuell
-redigering om behövs.
+`%APPDATA%\SystemFlow Pro\settings.json`. Open in a text editor for manual
+editing if needed.
 
-### Hur ändrar jag pollingintervallet?
+### How do I change the polling interval?
 
-Klicka kugghjulsikonen (⚙) i övre högra hörnet → välj önskat intervall →
-Spara. Ändringen gäller direkt, ingen omstart behövs.
+Click the gear icon (⚙) in the upper right corner → choose the desired interval →
+Save. The change applies immediately, no restart required.
 
-### Kan jag starta appen minimerad?
+### Can I start the app minimized?
 
-Ja — i Settings, bocka för "Starta minimerad". Appen öppnas i taskbar vid
-nästa start.
+Yes — in Settings, check "Start minimized". The app opens in the taskbar on
+the next start.
 
-### Kan jag använda °F istället för °C?
+### Can I use °F instead of °C?
 
-Ja — i Settings, välj Fahrenheit. (Note: °F-konvertering slutförs i en kommande
+Yes — in Settings, choose Fahrenheit. (Note: °F conversion is being completed in an upcoming
 release.)
 
-## Prestanda
+## Performance
 
-### Hur mycket CPU använder appen?
+### How much CPU does the app use?
 
-Default polling (2 sekunder): <3% kontinuerligt på moderna maskiner.
-Vid 500ms polling: 5-8%.
-När minimerad: ~0% (timer pausad).
+Default polling (2 seconds): <3% continuously on modern machines.
+At 500ms polling: 5-8%.
+When minimized: ~0% (timer paused).
 
-Om du ser högre användning, rapportera gärna en bugg med
-`%APPDATA%\SystemFlow Pro\logs\`-loggen.
+If you see higher usage, please report a bug with
+the `%APPDATA%\SystemFlow Pro\logs\` log.
 
-### Appen fryser / laggar
+### The app freezes / lags
 
-Möjliga orsaker:
-- LibreHardwareMonitor hittar en trasig sensor som returnerar långsamt
-- WMI-query hänger (men vi har 2s timeout — bör inte ske)
-- Din maskin har många (50+) sensorer och rendering är långsam
+Possible causes:
+- LibreHardwareMonitor finds a broken sensor that returns slowly
+- WMI query hangs (but we have a 2s timeout — should not happen)
+- Your machine has many (50+) sensors and rendering is slow
 
-Workaround: höj pollingintervallet till 5 sekunder i Settings.
+Workaround: raise the polling interval to 5 seconds in Settings.
 
-Rapportera gärna buggen med loggar.
+Please report the bug with logs.
 
-## Fel & krascher
+## Errors & crashes
 
-### Appen kraschade — vad gör jag?
+### The app crashed — what do I do?
 
-1. Kolla `%APPDATA%\SystemFlow Pro\logs\app-{datum}.log` — stack trace ligger där
-2. Öppna en [GitHub Issue](https://github.com/screamm/SystemFlow_Pro/issues)
-3. Bifoga: OS-version, CPU, GPU, loggen, vad du gjorde före kraschen
+1. Check `%APPDATA%\SystemFlow Pro\logs\app-{date}.log` — the stack trace is there
+2. Open a [GitHub Issue](https://github.com/screamm/SystemFlow_Pro/issues)
+3. Attach: OS version, CPU, GPU, the log, what you were doing before the crash
 
-### "Hårdvaruinformation ej tillgänglig"
+### "Hardware information unavailable"
 
-WMI kan vara korrupt. Prova:
-1. Starta `cmd` som administratör
-2. Kör `winmgmt /verifyrepository`
-3. Om "repository is not consistent": `winmgmt /resetrepository`
-4. Starta om datorn
+WMI may be corrupt. Try:
+1. Start `cmd` as administrator
+2. Run `winmgmt /verifyrepository`
+3. If "repository is not consistent": `winmgmt /resetrepository`
+4. Restart the computer
 
-Alternativt — SystemFlow Pro bör ändå fungera, bara hårdvarupanel kan vara tom.
+Alternatively — SystemFlow Pro should still work, only the hardware panel may be empty.
 
-## Sekretess & säkerhet
+## Privacy & security
 
-### Skickar appen data någonstans?
+### Does the app send data anywhere?
 
-Nej — förutom en update-check mot GitHub Releases API (vid varje start,
-ingen data om dig skickas, bara HTTP GET). Se [`PRIVACY.md`](../PRIVACY.md).
+No — apart from an update check against the GitHub Releases API (at every start,
+no data about you is sent, only an HTTP GET). See [`PRIVACY.md`](../PRIVACY.md).
 
-### Kan jag köra utan internet?
+### Can I run without internet?
 
-Ja. Update-check misslyckas tyst. All övrig funktionalitet är lokal.
+Yes. The update check fails silently. All other functionality is local.
 
-### Finns telemetri?
+### Is there telemetry?
 
-Nej. Ingen användardata samlas eller skickas.
+No. No user data is collected or sent.
 
-## Utveckling
+## Development
 
-### Var är källkoden?
+### Where is the source code?
 
 https://github.com/screamm/SystemFlow_Pro
 
-### Kan jag bidra?
+### Can I contribute?
 
-Ja — PR-requests välkomnas. Läs `docs/ARCHITECTURE.md` först för att förstå
-lager och designbeslut.
+Yes — pull requests are welcome. Read `docs/ARCHITECTURE.md` first to understand
+layers and design decisions.
 
-### Finns en roadmap?
+### Is there a roadmap?
 
-Se GitHub Issues med tag `enhancement`. Stora punkter på backlog:
-- Multi-språk (engelska som default, svenska som alternativ)
-- Export av metrics till CSV
-- Historik-läge (diagram över tid)
-- Widget-läge (always-on-top mini)
-- Mica på Windows 11
+See GitHub Issues tagged `enhancement`. Major items on the backlog:
+- Multi-language (English as default, Swedish as alternative)
+- Export metrics to CSV
+- History mode (charts over time)
+- Widget mode (always-on-top mini)
+- Mica on Windows 11
 
-## Avinstallation
+## Uninstallation
 
-### Hur avinstallerar jag?
+### How do I uninstall?
 
-Portabel app — bara radera mappen. Ta också bort `%APPDATA%\SystemFlow Pro\`
-om du vill rensa inställningar och loggar. Inga registry-entries skapas.
+Portable app — just delete the folder. Also remove `%APPDATA%\SystemFlow Pro\`
+if you want to clean up settings and logs. No registry entries are created.

@@ -1,34 +1,34 @@
-# Sprint 2 — Prestanda & resurshantering
+# Sprint 2 — Performance & resource management
 
-**Mål:** Frikoppla UI-tråden från WMI/LHM. Eliminera GC-trycket från UI-paneler. Stoppa minnesläckor. Implementera intelligent polling.
+**Goal:** Decouple the UI thread from WMI/LHM. Eliminate GC pressure from UI panels. Stop memory leaks. Implement intelligent polling.
 
-**Varaktighet:** 1 vecka (~30-40h)
+**Duration:** 1 week (~30-40h)
 **Branch:** `sprint-02-prestanda`
-**Målversion:** v1.0.10
-**Förutsättningar:** Sprint 1 klar (Accept cachad, .Result borta, logger finns)
+**Target version:** v1.0.10
+**Prerequisites:** Sprint 1 complete (Accept cached, .Result gone, logger present)
 
-**Utgångsläge efter Sprint 1:** Appen är stabil men fortfarande CPU-hungrig (8-15% kontinuerligt), UI flimrar vid uppdatering, paneler rivs och byggs om varje sekund.
+**Starting point after Sprint 1:** The app is stable but still CPU-hungry (8-15% continuously), UI flickers during updates, panels are torn down and rebuilt every second.
 
 ---
 
-## Sprintmål
+## Sprint goal
 
-- [ ] Timer_Tick kör på bakgrundstråd, UI-uppdatering marshallas till dispatcher
-- [ ] Inga `Panel.Children.Clear()` + `Add()` i hot path (en gång vid init)
-- [ ] Timer pausas vid minimerat fönster
-- [ ] Event-handlers unsubscribas vid stängning
-- [ ] Splash-init på bakgrundstråd — MainWindow-konstruktor returnerar snabbt
-- [ ] Kontinuerlig CPU-overhead <3% på referensmaskin
-- [ ] Tick-kostnad <50ms (från ~300ms)
+- [ ] Timer_Tick runs on a background thread, UI updates marshalled to the dispatcher
+- [ ] No `Panel.Children.Clear()` + `Add()` in the hot path (done once at init)
+- [ ] Timer pauses when the window is minimized
+- [ ] Event handlers unsubscribed on close
+- [ ] Splash init on background thread — MainWindow constructor returns quickly
+- [ ] Continuous CPU overhead <3% on reference machine
+- [ ] Tick cost <50ms (down from ~300ms)
 
 ---
 
 ## Tasks
 
-### T2.1 [P0] Flytta Timer_Tick-arbete till bakgrundstråd
-**Var:** `MainWindow.xaml.cs:Timer_Tick` + `UpdateSystemData` + alla getters
-**Varför:** 1 Hz WMI/LHM-anrop på UI-tråd = ~200-500ms blockering/sekund.
-**Åtgärd:**
+### T2.1 [P0] Move Timer_Tick work to a background thread
+**Where:** `MainWindow.xaml.cs:Timer_Tick` + `UpdateSystemData` + all getters
+**Why:** 1 Hz WMI/LHM calls on the UI thread = ~200-500ms blocking/second.
+**Action:**
 ```csharp
 private readonly SemaphoreSlim _tickGate = new(1, 1);
 
@@ -38,24 +38,24 @@ private async void Timer_Tick(object? sender, EventArgs e)
     try
     {
         var snapshot = await Task.Run(() => CollectSystemSnapshot());
-        ApplySnapshotToUI(snapshot); // körs redan på UI-tråd via DispatcherTimer
+        ApplySnapshotToUI(snapshot); // already runs on UI thread via DispatcherTimer
     }
     catch (Exception ex) { Logger.Error("Tick failed", ex); }
     finally { _tickGate.Release(); }
 }
 ```
-- Skapa en ny `SystemSnapshot` record/class med alla värden som behövs för UI
-- `CollectSystemSnapshot()` gör Accept + alla läsningar, returnerar värden
-- `ApplySnapshotToUI(snapshot)` uppdaterar `TextBlock.Text` etc — kör på UI-tråd
-**DoD:** UI frys under Tick <10ms enligt Visual Studio Diagnostics Tools. Alt-tab under polling känns rapp.
-**Estimat:** 6h
+- Create a new `SystemSnapshot` record/class with all values needed for the UI
+- `CollectSystemSnapshot()` does Accept + all reads, returns values
+- `ApplySnapshotToUI(snapshot)` updates `TextBlock.Text` etc — runs on UI thread
+**DoD:** UI freeze during Tick <10ms according to Visual Studio Diagnostics Tools. Alt-tab during polling feels responsive.
+**Estimate:** 6h
 
-### T2.2 [P0] Cacha UI-paneler (ingen Clear+Add varje tick)
-**Var:** `MainWindow.xaml.cs` — `UpdateCpuCoresPanel` (224), `UpdateMemoryPanel` (265), `UpdateGpuInfoPanel` (296), `UpdateThermalPanel` (325), `UpdateSystemPanel` (524), `UpdateHardwarePanel` (573)
-**Varför:** 30-100 UIElement/sek skapas och kastas → GC Gen0 var 2-3s, layout-pass på hela trädet.
-**Åtgärd:** Två alternativ, välj per panel:
+### T2.2 [P0] Cache UI panels (no Clear+Add every tick)
+**Where:** `MainWindow.xaml.cs` — `UpdateCpuCoresPanel` (224), `UpdateMemoryPanel` (265), `UpdateGpuInfoPanel` (296), `UpdateThermalPanel` (325), `UpdateSystemPanel` (524), `UpdateHardwarePanel` (573)
+**Why:** 30-100 UIElements/sec created and discarded → GC Gen0 every 2-3s, layout pass over the entire tree.
+**Action:** Two alternatives, choose per panel:
 
-**Alt A — `ItemsControl` + `ObservableCollection`** (för dynamiska listor som CPU-cores):
+**Alt A — `ItemsControl` + `ObservableCollection`** (for dynamic lists such as CPU cores):
 ```xml
 <ItemsControl ItemsSource="{Binding CpuCores}">
     <ItemsControl.ItemTemplate>
@@ -71,17 +71,17 @@ private async void Timer_Tick(object? sender, EventArgs e)
 </ItemsControl>
 ```
 
-**Alt B — En gång-byggd panel med namngivna TextBlocks** (för fasta paneler som Hardware):
-- Bygg i XAML med `x:Name`-tilldelningar
-- I code-behind: uppdatera bara `.Text`-värden
+**Alt B — Panel built once with named TextBlocks** (for fixed panels such as Hardware):
+- Build in XAML with `x:Name` assignments
+- In code-behind: only update `.Text` values
 
-**DoD:** `dotMemory`-snapshot under körning visar <10 UIElement-allokeringar/sekund (ner från 100+).
-**Estimat:** 8h
+**DoD:** `dotMemory` snapshot during run shows <10 UIElement allocations/second (down from 100+).
+**Estimate:** 8h
 
-### T2.3 [P0] Pausa timer vid minimerat fönster
-**Var:** `MainWindow.xaml.cs` — lägg till `StateChanged` event
-**Varför:** Ingen anledning att polla sensorer när användaren inte tittar. Sparar batteri på laptops.
-**Åtgärd:**
+### T2.3 [P0] Pause timer when the window is minimized
+**Where:** `MainWindow.xaml.cs` — add `StateChanged` event
+**Why:** No reason to poll sensors when the user is not looking. Saves battery on laptops.
+**Action:**
 ```csharp
 StateChanged += (s, e) => {
     if (WindowState == WindowState.Minimized)
@@ -96,34 +96,34 @@ StateChanged += (s, e) => {
     }
 };
 ```
-**DoD:** Minimera + Task Manager visar CPU-användning faller till ~0%. Återställ fönster → uppdatering fortsätter.
-**Estimat:** 0.5h
+**DoD:** Minimize + Task Manager shows CPU usage drops to ~0%. Restore window → updates continue.
+**Estimate:** 0.5h
 
-### T2.4 [P1] Event-unsubscribe i OnClosed
-**Var:** `MainWindow.xaml.cs:OnClosed`
-**Varför:** `_timer.Tick += Timer_Tick` utan matchande `-=` håller `MainWindow` levande efter Close → klassisk WPF-läcka.
-**Åtgärd:**
+### T2.4 [P1] Event unsubscribe in OnClosed
+**Where:** `MainWindow.xaml.cs:OnClosed`
+**Why:** `_timer.Tick += Timer_Tick` without matching `-=` keeps `MainWindow` alive after Close → classic WPF leak.
+**Action:**
 ```csharp
 protected override void OnClosed(EventArgs e)
 {
     _timer.Stop();
     _timer.Tick -= Timer_Tick;
-    StateChanged -= OnStateChanged; // om ovanstående flyttas till named method
+    StateChanged -= OnStateChanged; // if the above is moved to a named method
     _computer?.Close();
     _computer = null;
     _tickGate?.Dispose();
     base.OnClosed(e);
 }
 ```
-**DoD:** `dotMemory` snapshot efter Close visar 0 instanser av MainWindow (tidigare 1+).
-**Estimat:** 1h
+**DoD:** `dotMemory` snapshot after Close shows 0 instances of MainWindow (previously 1+).
+**Estimate:** 1h
 
-### T2.5 [P1] Frikoppla Splash/MainWindow-init
-**Var:** `App.xaml.cs` + `SplashWindow.xaml.cs:49-73` + `MainWindow.xaml.cs:InitializeCounters`
-**Varför:** `new MainWindow()` kör `computer.Open()` + `Accept()` på UI-tråden (1-3s). Splash fryser.
-**Åtgärd:**
-1. Gör `MainWindow`-konstruktorn minimal: bara `InitializeComponent()` + field-init
-2. Skapa `public async Task InitializeAsync()` som kör LHM-init på bakgrundstråd:
+### T2.5 [P1] Decouple Splash/MainWindow init
+**Where:** `App.xaml.cs` + `SplashWindow.xaml.cs:49-73` + `MainWindow.xaml.cs:InitializeCounters`
+**Why:** `new MainWindow()` runs `computer.Open()` + `Accept()` on the UI thread (1-3s). Splash freezes.
+**Action:**
+1. Make the `MainWindow` constructor minimal: only `InitializeComponent()` + field init
+2. Create `public async Task InitializeAsync()` that runs LHM init on a background thread:
 ```csharp
 public async Task InitializeAsync()
 {
@@ -142,68 +142,68 @@ await main.InitializeAsync();
 main.Show();
 _splashWindow.Close();
 ```
-4. Ta bort den nestlade `Task.Run → InvokeAsync → Task.Run`-pyramiden i `SplashWindow.CloseSplash`.
+4. Remove the nested `Task.Run → InvokeAsync → Task.Run` pyramid in `SplashWindow.CloseSplash`.
 
-**DoD:** Splash visas direkt (<200ms), stänger så snart init är klar. Ingen hårdkodad `Task.Delay(2000)`.
-**Estimat:** 4h
+**DoD:** Splash appears immediately (<200ms), closes as soon as init is complete. No hardcoded `Task.Delay(2000)`.
+**Estimate:** 4h
 
-### T2.6 [P1] Fixa %→RPM-heuristik
-**Var:** `MainWindow.xaml.cs:781, 812, 818, 847`
-**Varför:** Nuvarande `if (fanSpeed <= 100) fanSpeed *= 30f;` antar alla värden ≤100 är procent. Fel för zero-RPM-mode GPU:er och pumpsensorer.
-**Åtgärd:** Använd `sensor.SensorType` korrekt:
+### T2.6 [P1] Fix %→RPM heuristic
+**Where:** `MainWindow.xaml.cs:781, 812, 818, 847`
+**Why:** The current `if (fanSpeed <= 100) fanSpeed *= 30f;` assumes all values ≤100 are percentages. Wrong for zero-RPM-mode GPUs and pump sensors.
+**Action:** Use `sensor.SensorType` correctly:
 ```csharp
-if (sensor.SensorType == SensorType.Fan)      // RPM, oförändrat
+if (sensor.SensorType == SensorType.Fan)      // RPM, unchanged
     displayValue = $"{value:0} RPM";
-else if (sensor.SensorType == SensorType.Control) // Procent av max PWM
+else if (sensor.SensorType == SensorType.Control) // Percent of max PWM
     displayValue = $"{value:0}%";
 ```
-Separera RPM- och procent-sensorer i UI (två rader per fläkt om båda finns).
-**DoD:** GPU i zero-RPM-idle visar "0 RPM" (inte "0%" omräknat till "0 RPM"). Pumpsensor visar korrekt RPM.
-**Estimat:** 2h
+Separate RPM and percent sensors in the UI (two rows per fan if both exist).
+**DoD:** GPU in zero-RPM idle shows "0 RPM" (not "0%" converted to "0 RPM"). Pump sensor shows correct RPM.
+**Estimate:** 2h
 
-### T2.7 [P2] Ta bort dubbel CPU-core-sampling
-**Var:** `MainWindow.xaml.cs:229-231` + `_cpuCoreCounters`-fältet
-**Varför:** Båda `PerformanceCounter.NextValue()` OCH LHM läser per-core-användning. Dubbel kostnad, potentiellt inkonsekventa värden.
-**Åtgärd:** Välj en källa. Rekommendation: behåll LHM (enhetligt med resten av appen). Ta bort `_cpuCoreCounters`-field, loop i `InitializeCounters`, och allt användande.
-**DoD:** `_cpuCoreCounters` finns inte längre. CPU-panel visar korrekta per-core-värden från LHM.
-**Estimat:** 1h
+### T2.7 [P2] Remove duplicate CPU core sampling
+**Where:** `MainWindow.xaml.cs:229-231` + `_cpuCoreCounters` field
+**Why:** Both `PerformanceCounter.NextValue()` AND LHM read per-core usage. Double cost, potentially inconsistent values.
+**Action:** Choose one source. Recommendation: keep LHM (consistent with the rest of the app). Remove `_cpuCoreCounters` field, loop in `InitializeCounters`, and all usage.
+**DoD:** `_cpuCoreCounters` no longer exists. CPU panel displays correct per-core values from LHM.
+**Estimate:** 1h
 
-### T2.8 [P2] Minska string-allokeringar i hot path
-**Var:** `MainWindow.xaml.cs:340, 414` + värdeformattering
-**Varför:** `Substring` + `$"{}"` i inner loops → många små string-allokeringar = GC-tryck.
-**Åtgärd:**
-- Skippa `Substring` när `Length ≤ 25` (ingen trunkering behövs)
-- Använd `string.Create` eller pre-allokerad `StringBuilder` där format upprepas
-- Cacha format-strängar som const
-**DoD:** dotMemory-snapshot visar <200 string-allokeringar/sekund under polling (ner från 500+).
-**Estimat:** 2h
+### T2.8 [P2] Reduce string allocations in the hot path
+**Where:** `MainWindow.xaml.cs:340, 414` + value formatting
+**Why:** `Substring` + `$"{}"` in inner loops → many small string allocations = GC pressure.
+**Action:**
+- Skip `Substring` when `Length ≤ 25` (no truncation needed)
+- Use `string.Create` or a pre-allocated `StringBuilder` where the format is repeated
+- Cache format strings as const
+**DoD:** dotMemory snapshot shows <200 string allocations/second during polling (down from 500+).
+**Estimate:** 2h
 
-### T2.9 [P2] Konfigurerbart polling-intervall
-**Var:** `MainWindow.xaml.cs:126` + ny settings-backing
-**Varför:** Hårdkodad 1s är för aggressivt i bakgrund, men användare med stora kylsystem vill ha 500ms.
-**Åtgärd:** Lägg till field `_pollIntervalMs` med default 2000ms. Inställningsfil `%APPDATA%\SystemFlow Pro\settings.json` (JSON-serialisering via System.Text.Json). Settings-UI kommer i Sprint 4.
-**DoD:** Ändring i settings.json → efter omstart används nytt intervall.
-**Estimat:** 2h
+### T2.9 [P2] Configurable polling interval
+**Where:** `MainWindow.xaml.cs:126` + new settings backing
+**Why:** Hardcoded 1s is too aggressive in the background, but users with large cooling systems want 500ms.
+**Action:** Add field `_pollIntervalMs` with default 2000ms. Settings file `%APPDATA%\SystemFlow Pro\settings.json` (JSON serialization via System.Text.Json). Settings UI comes in Sprint 4.
+**DoD:** Change in settings.json → after restart the new interval is used.
+**Estimate:** 2h
 
-### T2.10 [P3] Benchmarka före/efter
-**Var:** Ny fil `docs/PERFORMANCE_NOTES.md`
-**Varför:** Utan mätpunkter vet vi inte att optimeringar faktiskt hjälper.
-**Åtgärd:** Mät:
-- CPU-användning i Task Manager, medelvärde över 5 min (minimerad + fokuserad)
-- Tick-kostnad via `Stopwatch` runt `CollectSystemSnapshot`
-- GC Gen0/min via PerfView eller Visual Studio Diagnostics
-Jämför mot Sprint 0-siffror (om tillgängligt) eller pre-Sprint-2 baseline.
-**DoD:** Dokument med före/efter-tabell committad.
-**Estimat:** 2h
-
----
-
-## Risk & beroenden
-
-- **T2.1** är sprintens största uppgift och beroende för T2.2. Om `CollectSystemSnapshot` + `ApplySnapshotToUI` arkitektur tar längre tid, skjut T2.8-T2.10 till backlog.
-- **T2.2** kräver XAML-ändringar + troligen DataContext — om MVVM-grunden saknas (Sprint 3) kan Alt B (namngivna TextBlocks) användas som mellansteg.
-- LibreHardwareMonitor är inte thread-safe — `_computer.Accept()` måste fortfarande vara **single-caller**. Semaphore i T2.1 garanterar det.
+### T2.10 [P3] Benchmark before/after
+**Where:** New file `docs/PERFORMANCE_NOTES.md`
+**Why:** Without measurements we do not know that optimizations actually help.
+**Action:** Measure:
+- CPU usage in Task Manager, average over 5 min (minimized + focused)
+- Tick cost via `Stopwatch` around `CollectSystemSnapshot`
+- GC Gen0/min via PerfView or Visual Studio Diagnostics
+Compare against Sprint 0 figures (if available) or pre-Sprint 2 baseline.
+**DoD:** Document with before/after table committed.
+**Estimate:** 2h
 
 ---
 
-## Retro (fyll i efter sprint)
+## Risk & dependencies
+
+- **T2.1** is the sprint's largest task and a dependency for T2.2. If the `CollectSystemSnapshot` + `ApplySnapshotToUI` architecture takes longer, defer T2.8-T2.10 to backlog.
+- **T2.2** requires XAML changes + likely DataContext — if the MVVM foundation is missing (Sprint 3), Alt B (named TextBlocks) can be used as an intermediate step.
+- LibreHardwareMonitor is not thread-safe — `_computer.Accept()` must still be **single-caller**. The semaphore in T2.1 guarantees this.
+
+---
+
+## Retrospective (fill in after sprint)

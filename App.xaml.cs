@@ -74,8 +74,8 @@ namespace SystemMonitorApp
                 await Dispatcher.InvokeAsync(() =>
                 {
                     MessageBox.Show(
-                        $"Ett fel uppstod vid start av SystemFlow Pro.\n\n{ex.Message}\n\nSe loggen i %APPDATA%\\SystemFlow Pro\\logs för detaljer.",
-                        "Startfel",
+                        $"An error occurred during startup of SystemFlow Pro.\n\n{ex.Message}\n\nSee the log in %APPDATA%\\SystemFlow Pro\\logs for details.",
+                        "Startup Error",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);
                 });
@@ -106,8 +106,8 @@ namespace SystemMonitorApp
                 await Dispatcher.InvokeAsync(() =>
                 {
                     var result = MessageBox.Show(
-                        $"Ny version tillgänglig: {info.LatestVersion}\n\nVill du öppna release-sidan?",
-                        "SystemFlow Pro — uppdatering tillgänglig",
+                        $"New version available: {info.LatestVersion}\n\nDo you want to open the release page?",
+                        "SystemFlow Pro — update available",
                         MessageBoxButton.YesNo,
                         MessageBoxImage.Information);
 
@@ -139,8 +139,8 @@ namespace SystemMonitorApp
                 try
                 {
                     MessageBox.Show(
-                        $"Ett oväntat fel uppstod.\n\n{e.Exception.Message}\n\n" +
-                        "Felet har sparats i loggen:\n%APPDATA%\\SystemFlow Pro\\logs",
+                        $"An unexpected error occurred.\n\n{e.Exception.Message}\n\n" +
+                        "The error has been saved to the log:\n%APPDATA%\\SystemFlow Pro\\logs",
                         "SystemFlow Pro",
                         MessageBoxButton.OK,
                         MessageBoxImage.Error);

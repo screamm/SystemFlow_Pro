@@ -174,8 +174,8 @@ namespace SystemMonitorApp
         private void UpdateMemoryPanel(SystemSnapshot s)
         {
             if (_memoryInfoText == null) return;
-            _memoryInfoText.Text = $"Använt: {s.UsedMemoryGB:F1} GB / {s.TotalMemoryGB:F1} GB\n" +
-                                   $"Tillgängligt: {s.AvailableMemoryGB:F1} GB";
+            _memoryInfoText.Text = $"Used: {s.UsedMemoryGB:F1} GB / {s.TotalMemoryGB:F1} GB\n" +
+                                   $"Available: {s.AvailableMemoryGB:F1} GB";
         }
 
         private void UpdateGpuInfoPanel(string text)
@@ -223,7 +223,7 @@ namespace SystemMonitorApp
             {
                 ThermalPanel.Children.Add(new TextBlock
                 {
-                    Text = "Temperaturdata ej tillgänglig",
+                    Text = "Temperature data not available",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
                 });
@@ -240,7 +240,7 @@ namespace SystemMonitorApp
             {
                 CpuFansPanel.Children.Add(new TextBlock
                 {
-                    Text = "Väntar på CPU-sensorer...",
+                    Text = "Waiting for CPU sensors...",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
                 });
@@ -266,8 +266,8 @@ namespace SystemMonitorApp
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 12, 0, 0),
-                    Text = "Fläkt-RPM ej tillgänglig.\n" +
-                           "Aktivera i BIOS: Smart Fan 5 / Q-Fan / Fan Xpert → \"Manual\" eller \"Full Speed\"."
+                    Text = "Fan RPM not available.\n" +
+                           "Enable in BIOS: Smart Fan 5 / Q-Fan / Fan Xpert → \"Manual\" or \"Full Speed\"."
                 };
                 CpuFansPanel.Children.Add(hint);
             }
@@ -280,7 +280,7 @@ namespace SystemMonitorApp
             {
                 SystemFansPanel.Children.Add(new TextBlock
                 {
-                    Text = "Ingen GPU-sensor tillgänglig",
+                    Text = "No GPU sensor available",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
                 });
@@ -394,7 +394,7 @@ namespace SystemMonitorApp
                 }
                 else
                 {
-                    tb.Text = $"{displayName}: Inaktiv";
+                    tb.Text = $"{displayName}: Inactive";
                     tb.Foreground = (SolidColorBrush)FindResource("TextMutedBrush");
                 }
             }
@@ -410,20 +410,20 @@ namespace SystemMonitorApp
             {
                 CpuFansPanel.Children.Add(new TextBlock
                 {
-                    Text = "Inga CPU/system-fläktar detekterade\n\n" +
-                           "Moderkortets SuperIO-chip (ITE / Nuvoton) läses normalt för\n" +
-                           "fläktdata, men kan blockeras av:\n" +
-                           "• Windows 11 Insider / 25H2 begränsar port-I/O till LPC-bussen\n" +
-                           "• Moderkortet finns i LHM:s databas men SuperIO-chipet är inte\n" +
-                           "  mappat för just din variant/revision\n" +
-                           "• Annat program (AORUS Engine, ASUS AI Suite, Armoury Crate)\n" +
-                           "  har exklusiv åtkomst till SuperIO\n" +
-                           "• Fläktar är direkt anslutna till PSU utan RPM-pinne\n\n" +
-                           "Felsökning:\n" +
-                           "1. Kör HWiNFO64 — om inte heller det hittar fläktarna är det\n" +
-                           "   en Windows- eller BIOS-begränsning\n" +
-                           "2. Stäng andra hårdvaruappar och starta om\n" +
-                           "3. Uppdatera BIOS" +
+                    Text = "No CPU/system fans detected\n\n" +
+                           "The motherboard's SuperIO chip (ITE / Nuvoton) is normally read for\n" +
+                           "fan data, but can be blocked by:\n" +
+                           "• Windows 11 Insider / 25H2 restricts port I/O to the LPC bus\n" +
+                           "• Motherboard is in LHM's database but the SuperIO chip is not\n" +
+                           "  mapped for your specific variant/revision\n" +
+                           "• Another application (AORUS Engine, ASUS AI Suite, Armoury Crate)\n" +
+                           "  has exclusive access to SuperIO\n" +
+                           "• Fans are directly connected to PSU without an RPM pin\n\n" +
+                           "Troubleshooting:\n" +
+                           "1. Run HWiNFO64 — if it also cannot find the fans, this is a\n" +
+                           "   Windows or BIOS limitation\n" +
+                           "2. Close other hardware monitoring apps and restart\n" +
+                           "3. Update BIOS" +
                            reportHint,
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
@@ -435,11 +435,11 @@ namespace SystemMonitorApp
             {
                 SystemFansPanel.Children.Add(new TextBlock
                 {
-                    Text = "Inga GPU-fläktar detekterade\n\n" +
-                           "Vanligt på moderna GPU:er:\n" +
-                           "• Zero RPM Mode — fläktarna stoppas under ~55°C\n" +
-                           "• Hybrid-grafik där dGPU är avstängd\n" +
-                           "• Drivrutinen exponerar inte load-sensor",
+                    Text = "No GPU fans detected\n\n" +
+                           "Common on modern GPUs:\n" +
+                           "• Zero-RPM Mode — fans stop below ~55°C\n" +
+                           "• Hybrid graphics where the dGPU is powered off\n" +
+                           "• Driver does not expose a load sensor",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap
@@ -460,7 +460,7 @@ namespace SystemMonitorApp
 
             _systemStatusText.Text = $"Status: {s.SystemStatus}";
             _systemStatusText.Foreground = color;
-            _systemUptimeText.Text = $"Uppdaterad: {s.Timestamp:HH:mm:ss}";
+            _systemUptimeText.Text = $"Updated: {s.Timestamp:HH:mm:ss}";
         }
 
         // ===== UI chrome handlers =====
@@ -491,7 +491,7 @@ namespace SystemMonitorApp
             catch (Exception ex)
             {
                 Logger.Warn("Open SettingsWindow failed", ex);
-                MessageBox.Show("Kunde inte öppna inställningar. Se loggen för detaljer.",
+                MessageBox.Show("Could not open settings. See the log for details.",
                     "SystemFlow Pro", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }
@@ -506,7 +506,7 @@ namespace SystemMonitorApp
             catch (Exception ex)
             {
                 Logger.Warn("Open AboutWindow failed", ex);
-                MessageBox.Show("Kunde inte öppna Om-dialogen. Se loggen för detaljer.",
+                MessageBox.Show("Could not open the About dialog. See the log for details.",
                     "SystemFlow Pro", MessageBoxButton.OK, MessageBoxImage.Warning);
             }
         }

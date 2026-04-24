@@ -9,8 +9,8 @@ namespace SystemMonitorApp.Services
     public static class SystemStatusEvaluator
     {
         public const string Optimal = "OPTIMAL";
-        public const string Medium = "MEDIUMBELASTNING";
-        public const string High = "HÖG BELASTNING";
+        public const string Medium = "MEDIUM LOAD";
+        public const string High = "HIGH LOAD";
 
         // Thresholds — high wins over medium.
         private const float HighCpu = 80f;

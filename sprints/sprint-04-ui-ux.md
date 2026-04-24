@@ -1,35 +1,35 @@
-# Sprint 4 — UI/UX modernisering
+# Sprint 4 — UI/UX modernization
 
-**Mål:** Ersätt multicolored emoji med Fluent-ikoner. Fixa trasig window chrome. Gör appen tillgänglig (WCAG-nivå för desktop). Konsolidera färgpalett. Lägg till Settings-UI och About-dialog. Höj det visuella intrycket från "2022 hobby-dashboard" till "2026 Windows-native".
+**Goal:** Replace multicolored emoji with Fluent icons. Fix broken window chrome. Make the app accessible (WCAG level for desktop). Consolidate the color palette. Add Settings UI and About dialog. Elevate the visual impression from "2022 hobby dashboard" to "2026 Windows-native".
 
-**Varaktighet:** 2 veckor (~50-70h)
+**Duration:** 2 weeks (~50-70h)
 **Branch:** `sprint-04-ui-ux`
-**Målversion:** v1.1.0-beta.1
-**Förutsättningar:** Sprint 3 klar (MVVM på plats, binding fungerar)
+**Target version:** v1.1.0-beta.1
+**Prerequisites:** Sprint 3 complete (MVVM in place, binding working)
 
 ---
 
-## Sprintmål
+## Sprint goal
 
-- [ ] Noll multicolored emoji i XAML-filer
-- [ ] Aero Snap, Snap Layouts (Win+Z), maximize-double-click fungerar
-- [ ] MinWidth ≤ 1100, MinHeight ≤ 800 — ryms på 1366×768
-- [ ] Alla interaktiva kontroller har `AutomationProperties.Name` + ToolTip
-- [ ] TabIndex på alla knappar, FocusVisualStyle synlig
-- [ ] Färgpalett definierad på ett ställe (App.xaml), MainWindow använder StaticResource
-- [ ] Settings-dialog: polling-intervall, temperatur-enhet, start-minimerad
-- [ ] About-dialog: version, licens, GitHub-länk, tredjepart-attribution
-- [ ] Empty state när sensorer saknas (inte tom panel)
-- [ ] Tooltip på alla hero-kort ("CPU Package (Tctl) — tröskel 95°C")
+- [ ] Zero multicolored emoji in XAML files
+- [ ] Aero Snap, Snap Layouts (Win+Z), maximize double-click work
+- [ ] MinWidth ≤ 1100, MinHeight ≤ 800 — fits on 1366×768
+- [ ] All interactive controls have `AutomationProperties.Name` + ToolTip
+- [ ] TabIndex on all buttons, FocusVisualStyle visible
+- [ ] Color palette defined in one place (App.xaml), MainWindow uses StaticResource
+- [ ] Settings dialog: polling interval, temperature unit, start minimized
+- [ ] About dialog: version, license, GitHub link, third-party attribution
+- [ ] Empty state when sensors are missing (not an empty panel)
+- [ ] Tooltip on all hero cards ("CPU Package (Tctl) — threshold 95°C")
 
 ---
 
 ## Tasks
 
-### T4.1 [P0] Byt multicolored emoji mot Segoe Fluent Icons
-**Var:** `MainWindow.xaml` rader 194, 230, 264, 298, 334, 339, 349, 354, 364, 377, 387, 390 + eventuella andra
-**Varför:** Bryter mot globala UI-regler i `~/.claude/RULES.md`. Renderas olika per Windows-version, skalar dåligt i DPI 150%+.
-**Åtgärd:**
+### T4.1 [P0] Replace multicolored emoji with Segoe Fluent Icons
+**Where:** `MainWindow.xaml` lines 194, 230, 264, 298, 334, 339, 349, 354, 364, 377, 387, 390 + any others
+**Why:** Violates global UI rules in `~/.claude/RULES.md`. Renders differently per Windows version, scales poorly at DPI 150%+.
+**Action:**
 ```xml
 <Style TargetType="TextBlock" x:Key="FluentIcon">
     <Setter Property="FontFamily" Value="Segoe Fluent Icons, Segoe MDL2 Assets"/>
@@ -37,23 +37,23 @@
     <Setter Property="Foreground" Value="{StaticResource AccentBrush}"/>
 </Style>
 ```
-Ersätt varje emoji med glyph-kod (visas i "Character Map" eller via fluenticons.co):
+Replace each emoji with a glyph code (shown in "Character Map" or via fluenticons.co):
 - `⚡` → `&#xE945;` (Lightning)
 - `🎮` → `&#xE7FC;` (Game controller)
-- `💾` → `&#xE105;` (Save, tolkas som RAM-ikon)
-- `🌡️` → `&#xE9CA;` (Temperature / thermometer saknas, använd `&#xF152;`)
-- `🔥` → `&#xE945;` eller custom path
+- `💾` → `&#xE105;` (Save, interpreted as RAM icon)
+- `🌡️` → `&#xE9CA;` (Temperature / thermometer missing, use `&#xF152;`)
+- `🔥` → `&#xE945;` or custom path
 - `❄️` → `&#xE9CA;` (Snow)
 - `🎯` → `&#xF272;` (Target)
 - `⚙️` → `&#xE713;` (Settings)
 - `🔧` → `&#xE90F;` (Repair)
-**DoD:** `Grep` på unicode-range `[\x{1F300}-\x{1FAFF}]` i .xaml-filer returnerar 0 träffar.
-**Estimat:** 4h
+**DoD:** `Grep` for unicode range `[\x{1F300}-\x{1FAFF}]` in .xaml files returns 0 hits.
+**Estimate:** 4h
 
 ### T4.2 [P0] Fix window chrome (Aero Snap + custom titlebar)
-**Var:** `MainWindow.xaml:1-50`
-**Varför:** `WindowStyle="None"` + `AllowsTransparency="True"` bryter Aero Snap, Snap Layouts, maximize-double-click.
-**Åtgärd:** Byt till `WindowChrome`-API som bevarar Win32-funktioner:
+**Where:** `MainWindow.xaml:1-50`
+**Why:** `WindowStyle="None"` + `AllowsTransparency="True"` breaks Aero Snap, Snap Layouts, maximize double-click.
+**Action:** Switch to the `WindowChrome` API which preserves Win32 functionality:
 ```xml
 <Window ...>
     <WindowChrome.WindowChrome>
@@ -66,7 +66,7 @@ Ersätt varje emoji med glyph-kod (visas i "Character Map" eller via fluenticons
     </WindowChrome.WindowChrome>
     <Border Background="{StaticResource BackgroundBrush}" CornerRadius="8">
         <Grid>
-            <!-- Header: sätt WindowChrome.IsHitTestVisibleInChrome="True" på knappar -->
+            <!-- Header: set WindowChrome.IsHitTestVisibleInChrome="True" on buttons -->
             <Grid Height="48" VerticalAlignment="Top">
                 <TextBlock Text="SystemFlow Pro" Margin="16,0,0,0"/>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right"
@@ -81,49 +81,49 @@ Ersätt varje emoji med glyph-kod (visas i "Character Map" eller via fluenticons
     </Border>
 </Window>
 ```
-Ta bort `WindowStyle="None"` och `AllowsTransparency="True"`. Behåll DropShadow via `WindowChrome.CornerRadius`.
-**DoD:** Win+Up maximerar, Win+Down minimerar, drag till skärmkant snappar, Win+Z visar Snap Layouts, dubbelklick på titelbaren maximerar/återställer.
-**Estimat:** 6h
+Remove `WindowStyle="None"` and `AllowsTransparency="True"`. Keep DropShadow via `WindowChrome.CornerRadius`.
+**DoD:** Win+Up maximizes, Win+Down minimizes, drag to screen edge snaps, Win+Z shows Snap Layouts, double-click on the titlebar maximizes/restores.
+**Estimate:** 6h
 
-### T4.3 [P0] Minska fönsterdimensioner + DPI-säker layout
-**Var:** `MainWindow.xaml:4, 7-9`
-**Varför:** 1800×1300 + MinWidth 1400 klipps på 1080p. Hero-kort `Height="240"` klipps på 200% DPI.
-**Åtgärd:**
+### T4.3 [P0] Reduce window dimensions + DPI-safe layout
+**Where:** `MainWindow.xaml:4, 7-9`
+**Why:** 1800×1300 + MinWidth 1400 gets clipped on 1080p. Hero card `Height="240"` gets clipped at 200% DPI.
+**Action:**
 - `Width="1400" Height="900" MinWidth="1100" MinHeight="750"`
-- Alla `Height="X"` i kort → byt till `MinHeight="X"` eller ta bort helt
-- Gör hero-grid `UniformGrid` med auto-sizing istället för fast höjd
-- Testa på 125%, 150%, 200% DPI via Windows-inställningar
-**DoD:** Appen ryms på 1366×768. Vid 200% DPI klipps ingen text.
-**Estimat:** 3h
+- All `Height="X"` in cards → switch to `MinHeight="X"` or remove entirely
+- Make the hero grid a `UniformGrid` with auto-sizing instead of fixed height
+- Test at 125%, 150%, 200% DPI via Windows settings
+**DoD:** The app fits on 1366×768. At 200% DPI no text is clipped.
+**Estimate:** 3h
 
-### T4.4 [P0] Konsolidera färgpalett
-**Var:** `App.xaml:6-17` och `MainWindow.xaml:14-25`
-**Varför:** Dubbla, motstridiga palettdefinitioner. App.xaml-styles används aldrig.
-**Åtgärd:**
-1. Bestäm single source of truth → `App.xaml`
-2. Flytta MainWindow-palettens värden dit (de som faktiskt används)
-3. Radera obsoleta App.xaml-styles (`ModernButton`, `HeaderText`, `ModernProgressBar` om ej använda)
-4. MainWindow.xaml → inga `<SolidColorBrush x:Key=...>`-deklarationer, bara `StaticResource`
-**DoD:** `Grep` efter `<SolidColorBrush` i MainWindow.xaml = 0 träffar.
-**Estimat:** 2h
+### T4.4 [P0] Consolidate color palette
+**Where:** `App.xaml:6-17` and `MainWindow.xaml:14-25`
+**Why:** Duplicate, conflicting palette definitions. App.xaml styles are never used.
+**Action:**
+1. Decide single source of truth → `App.xaml`
+2. Move the MainWindow palette values there (those actually used)
+3. Delete obsolete App.xaml styles (`ModernButton`, `HeaderText`, `ModernProgressBar` if unused)
+4. MainWindow.xaml → no `<SolidColorBrush x:Key=...>` declarations, only `StaticResource`
+**DoD:** `Grep` for `<SolidColorBrush` in MainWindow.xaml = 0 hits.
+**Estimate:** 2h
 
 ### T4.5 [P0] Accessibility: AutomationProperties + TabIndex + FocusVisual
-**Var:** `MainWindow.xaml` — alla interaktiva kontroller och data-readouts
-**Varför:** Narrator säger "button" utan kontext. TAB gör inget meningsfullt. Tangentbordsanvändare blockeras.
-**Åtgärd:**
+**Where:** `MainWindow.xaml` — all interactive controls and data readouts
+**Why:** Narrator says "button" without context. TAB does nothing meaningful. Keyboard users are blocked.
+**Action:**
 ```xml
-<!-- Knappar i chrome -->
+<!-- Buttons in chrome -->
 <Button Content="&#xE921;"
-        AutomationProperties.Name="Minimera fönster"
-        ToolTip="Minimera (Win+Down)"
+        AutomationProperties.Name="Minimize window"
+        ToolTip="Minimize (Win+Down)"
         TabIndex="101"/>
 
-<!-- Data-readouts -->
+<!-- Data readouts -->
 <TextBlock Text="{Binding CpuUsageDisplay}"
-           AutomationProperties.Name="CPU-belastning"
+           AutomationProperties.Name="CPU load"
            AutomationProperties.LiveSetting="Polite"/>
 
-<!-- FocusVisualStyle i App.xaml -->
+<!-- FocusVisualStyle in App.xaml -->
 <Style x:Key="AccessibleFocus" TargetType="Control">
     <Setter Property="FocusVisualStyle">
         <Setter.Value>
@@ -142,111 +142,111 @@ Ta bort `WindowStyle="None"` och `AllowsTransparency="True"`. Behåll DropShadow
 </Style>
 ```
 **DoD:**
-- Narrator (Win+Ctrl+Enter) läser meningsfulla namn på alla kontroller
-- TAB genom fönstret träffar knappar i logisk ordning
-- Fokuserad kontroll har synlig outline
-**Estimat:** 5h
+- Narrator (Win+Ctrl+Enter) reads meaningful names on all controls
+- TAB through the window hits buttons in logical order
+- Focused control has a visible outline
+**Estimate:** 5h
 
-### T4.6 [P0] Settings-dialog
-**Var:** Ny fil `Views/SettingsWindow.xaml(.cs)` + `ViewModels/SettingsViewModel.cs`
-**Varför:** Polling-intervall och °C/°F ska vara användarkonfigurerbart.
-**Åtgärd:**
+### T4.6 [P0] Settings dialog
+**Where:** New file `Views/SettingsWindow.xaml(.cs)` + `ViewModels/SettingsViewModel.cs`
+**Why:** Polling interval and °C/°F should be user-configurable.
+**Action:**
 - ModalWindow, `Owner = MainWindow`, `WindowStartupLocation="CenterOwner"`
-- Fält:
-  - Pollingintervall: ComboBox (500ms, 1s, 2s, 5s)
-  - Temperaturenhet: ToggleButton (°C / °F)
-  - Pausa när minimerad: Checkbox
-  - Start minimerad: Checkbox
-- "Spara" sparar via `ISettingsService`, stänger dialogen
-- "Avbryt" stänger utan att spara
-- Öppnas från kugghjulsknapp i MainWindow-headern (ny knapp)
-**DoD:** Ändring av polling-intervall tar effekt direkt efter save (inte kräver omstart).
-**Estimat:** 6h
+- Fields:
+  - Polling interval: ComboBox (500ms, 1s, 2s, 5s)
+  - Temperature unit: ToggleButton (°C / °F)
+  - Pause when minimized: Checkbox
+  - Start minimized: Checkbox
+- "Save" saves via `ISettingsService`, closes the dialog
+- "Cancel" closes without saving
+- Opened from a gear button in the MainWindow header (new button)
+**DoD:** Changing the polling interval takes effect immediately after save (does not require restart).
+**Estimate:** 6h
 
-### T4.7 [P1] About-dialog
-**Var:** Ny fil `Views/AboutWindow.xaml(.cs)`
-**Åtgärd:**
-- Appikonen stor, appnamn, version (läs från `Assembly.GetExecutingAssembly().GetName().Version`)
-- Byggdatum (via linker timestamp eller embedded constant)
-- Länk: GitHub-repo, rapportera bug, licens
-- Avsnitt "Tredjepartsbibliotek":
-  - LibreHardwareMonitor — MPL 2.0 — länk
-  - .NET 9 — MIT — länk
-- "OK"-knapp
-**DoD:** Öppnas från info-knapp i header. Licens- och GitHub-länkar funktionella.
-**Estimat:** 3h
+### T4.7 [P1] About dialog
+**Where:** New file `Views/AboutWindow.xaml(.cs)`
+**Action:**
+- The app icon large, app name, version (read from `Assembly.GetExecutingAssembly().GetName().Version`)
+- Build date (via linker timestamp or embedded constant)
+- Links: GitHub repo, report a bug, license
+- Section "Third-party libraries":
+  - LibreHardwareMonitor — MPL 2.0 — link
+  - .NET 9 — MIT — link
+- "OK" button
+**DoD:** Opens from the info button in the header. License and GitHub links functional.
+**Estimate:** 3h
 
-### T4.8 [P1] Empty states + fel-UI
-**Var:** `MainWindow.xaml` — alla paneler som kan vara tomma
-**Varför:** När LHM inte hittar sensorer (t.ex. på gamla CPU:er eller utan admin för MSR) visas tomt kort. Förvirrar användare.
-**Åtgärd:** Lägg till `DataTrigger` eller ny `IValueConverter` `CollectionEmptyToVisibility`:
+### T4.8 [P1] Empty states + error UI
+**Where:** `MainWindow.xaml` — all panels that can be empty
+**Why:** When LHM does not find sensors (e.g. on older CPUs or without admin for MSR) an empty card is shown. Confuses users.
+**Action:** Add a `DataTrigger` or new `IValueConverter` `CollectionEmptyToVisibility`:
 ```xml
 <StackPanel Visibility="{Binding CpuCores.Count, Converter={StaticResource EmptyToVisibility}}">
-    <TextBlock Text="Inga CPU-kärnsensorer tillgängliga"
+    <TextBlock Text="No CPU core sensors available"
                Foreground="{StaticResource TextMutedBrush}"/>
-    <TextBlock Text="Prova att starta appen som administratör för fler sensorer."
+    <TextBlock Text="Try starting the app as administrator for more sensors."
                FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
 </StackPanel>
 ```
-Gör samma för fläkt-, termal- och GPU-paneler.
-**DoD:** När `CpuCores.Count == 0` visas vänligt meddelande istället för tom yta.
-**Estimat:** 3h
+Do the same for fan, thermal, and GPU panels.
+**DoD:** When `CpuCores.Count == 0` a friendly message is shown instead of empty space.
+**Estimate:** 3h
 
 ### T4.9 [P1] Splash: progress + timeout
-**Var:** `SplashWindow.xaml(.cs)` + `App.xaml.cs`
-**Varför:** "Initialiserar hårdvaruövervakare..." utan progress. Om LHM hänger står splash för evigt.
-**Åtgärd:**
-- Lägg till `ProgressBar` med `IsIndeterminate="True"` eller stegvis progress
-- Stegvisa meddelanden: "Öppnar sensor-API...", "Läser CPU-konfiguration...", "Läser GPU...", "Laddar inställningar..."
-- 30s timeout i `InitializeAsync` — om init inte klar: visa felmeddelande "Kunde inte starta hårdvaruövervakning. Fortsätt ändå?" med "Fortsätt" + "Avbryt"
-**DoD:** Ingen väg där splash fastnar utan feedback.
-**Estimat:** 3h
+**Where:** `SplashWindow.xaml(.cs)` + `App.xaml.cs`
+**Why:** "Initializing hardware monitor..." without progress. If LHM hangs, the splash stays forever.
+**Action:**
+- Add a `ProgressBar` with `IsIndeterminate="True"` or stepwise progress
+- Stepwise messages: "Opening sensor API...", "Reading CPU configuration...", "Reading GPU...", "Loading settings..."
+- 30s timeout in `InitializeAsync` — if init not complete: show error message "Could not start hardware monitoring. Continue anyway?" with "Continue" + "Cancel"
+**DoD:** No path where the splash gets stuck without feedback.
+**Estimate:** 3h
 
-### T4.10 [P1] Tooltips på hero-kort
-**Var:** `MainWindow.xaml` — alla hero-kort
-**Åtgärd:** Hover på "45°C" → tooltip "CPU Package (Tctl) · Varning vid 85°C · Kritisk vid 95°C". Hover på "GPU 67%" → "Används för 3D-grafik och compute".
-**DoD:** Alla 4 hero-kort har meningsfulla tooltips.
-**Estimat:** 2h
+### T4.10 [P1] Tooltips on hero cards
+**Where:** `MainWindow.xaml` — all hero cards
+**Action:** Hover on "45°C" → tooltip "CPU Package (Tctl) · Warning at 85°C · Critical at 95°C". Hover on "GPU 67%" → "Used for 3D graphics and compute".
+**DoD:** All 4 hero cards have meaningful tooltips.
+**Estimate:** 2h
 
-### T4.11 [P2] Live-badge → senast uppdaterad timestamp
-**Var:** `MainWindow.xaml:150-158`
-**Varför:** Pulserande "LIVE" förmedlar ingen info. Timestamp är mer användbart.
-**Åtgärd:** `<TextBlock Text="{Binding LastUpdateDisplay}" />` — format: "Uppdaterad: 21:14:32". Uppdateras varje tick.
-**DoD:** Timestamp ticker sekundvis.
-**Estimat:** 1h
+### T4.11 [P2] Live badge → last updated timestamp
+**Where:** `MainWindow.xaml:150-158`
+**Why:** A pulsating "LIVE" conveys no information. A timestamp is more useful.
+**Action:** `<TextBlock Text="{Binding LastUpdateDisplay}" />` — format: "Updated: 21:14:32". Updated every tick.
+**DoD:** The timestamp ticks every second.
+**Estimate:** 1h
 
-### T4.12 [P2] WCAG-kontrast: höj muted-text
-**Var:** `App.xaml` — `TextMutedBrush`
-**Åtgärd:** `#94A3B8` → `#A8B2C0` på `#191B23`-bakgrund. Ratio ökar från ~4.9:1 till ~5.5:1. Höj minsta font-storlek för muted-text till 12pt.
-**DoD:** WebAIM contrast checker godkänner AA för "normal text" överallt.
-**Estimat:** 1h
+### T4.12 [P2] WCAG contrast: raise muted text
+**Where:** `App.xaml` — `TextMutedBrush`
+**Action:** `#94A3B8` → `#A8B2C0` on `#191B23` background. Ratio increases from ~4.9:1 to ~5.5:1. Raise minimum font size for muted text to 12pt.
+**DoD:** WebAIM contrast checker approves AA for "normal text" throughout.
+**Estimate:** 1h
 
-### T4.13 [P2] Mica/Acrylic-option (Windows 11)
-**Var:** `MainWindow.xaml(.cs)` — runtime detection
-**Åtgärd:** På Windows 11+ aktivera Mica via DWM-interop:
+### T4.13 [P2] Mica/Acrylic option (Windows 11)
+**Where:** `MainWindow.xaml(.cs)` — runtime detection
+**Action:** On Windows 11+ activate Mica via DWM interop:
 ```csharp
-// Efter SourceInitialized
-DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref miсaValue, sizeof(int));
+// After SourceInitialized
+DwmSetWindowAttribute(hwnd, DWMWA_SYSTEMBACKDROP_TYPE, ref micaValue, sizeof(int));
 ```
-Fallback till platt bakgrund på Windows 10.
-**DoD:** På Windows 11 visas transparent/blurrig bakgrund som speglar desktop (Mica).
-**Estimat:** 4h
+Fallback to flat background on Windows 10.
+**DoD:** On Windows 11 a transparent/blurry background is shown that mirrors the desktop (Mica).
+**Estimate:** 4h
 
-### T4.14 [P3] Screenshot-uppdatering
-**Var:** `screenshot.png` i rot
-**Åtgärd:** Ta ny screenshot av UI:t efter redesign. Uppdatera README.
-**DoD:** Ny screenshot committad.
-**Estimat:** 0.5h
-
----
-
-## Risk & beroenden
-
-- **T4.2 (WindowChrome)** kan kräva justering av skuggor/radius som var beroende av `AllowsTransparency`. Räkna med 1-2 timmar extra för finjustering.
-- **T4.6 (Settings)** kräver att `SettingsService` från Sprint 3 fungerar — verifiera innan start.
-- **T4.13 (Mica)** är nice-to-have och Windows 11-specifikt. Skjut om tid saknas.
-- Fluent Icons glyph-koder kan variera mellan Windows-versioner → testa på både Win10 och Win11.
+### T4.14 [P3] Screenshot update
+**Where:** `screenshot.png` in root
+**Action:** Take a new screenshot of the UI after redesign. Update README.
+**DoD:** New screenshot committed.
+**Estimate:** 0.5h
 
 ---
 
-## Retro (fyll i efter sprint)
+## Risk & dependencies
+
+- **T4.2 (WindowChrome)** may require adjustment of shadows/radius that depended on `AllowsTransparency`. Expect 1-2 extra hours for fine-tuning.
+- **T4.6 (Settings)** requires that `SettingsService` from Sprint 3 works — verify before starting.
+- **T4.13 (Mica)** is nice-to-have and Windows 11-specific. Defer if time is short.
+- Fluent Icons glyph codes may vary between Windows versions → test on both Win10 and Win11.
+
+---
+
+## Retrospective (fill in after sprint)

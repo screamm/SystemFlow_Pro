@@ -84,11 +84,11 @@
 
             <!-- Loading Text with Proper Spacing -->
             <StackPanel Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,10,0,0">
-                <TextBlock x:Name="LoadingText" Text="Initialiserar hårdvaruövervakare..." 
+                <TextBlock x:Name="LoadingText" Text="Initializing hardware monitor..."
                            FontFamily="Segoe UI Variable" FontSize="16" FontWeight="Medium"
-                           Foreground="{StaticResource TextSecondaryBrush}" 
+                           Foreground="{StaticResource TextSecondaryBrush}"
                            HorizontalAlignment="Center"/>
-                <TextBlock Text="Laddar sensorer och systemkonfiguration..." 
+                <TextBlock Text="Loading sensors and system configuration..."
                            FontFamily="Segoe UI Variable" FontSize="12" FontWeight="Normal"
                            Foreground="#94A3B8" HorizontalAlignment="Center" Margin="0,8,0,0"/>
             </StackPanel>

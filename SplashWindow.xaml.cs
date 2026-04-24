@@ -12,11 +12,11 @@ namespace SystemMonitorApp
         private int _loadingStep;
         private readonly string[] _loadingMessages =
         {
-            "Initialiserar hårdvaruövervakare...",
-            "Laddar systemsensorer...",
-            "Konfigurerar hårdvarudetektering...",
-            "Förbereder användargränssnitt...",
-            "Nästan klar..."
+            "Initializing hardware monitor...",
+            "Loading system sensors...",
+            "Configuring hardware detection...",
+            "Preparing user interface...",
+            "Almost ready..."
         };
 
         public SplashWindow()

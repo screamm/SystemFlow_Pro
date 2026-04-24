@@ -47,7 +47,7 @@ namespace SystemMonitorApp.Models
 
         public string HardwareInfoText { get; init; } = "";
 
-        /// <summary>Derived status: "OPTIMAL" | "MEDIUMBELASTNING" | "HÖG BELASTNING".</summary>
+        /// <summary>Derived status: "OPTIMAL" | "MEDIUM LOAD" | "HIGH LOAD".</summary>
         public string SystemStatus { get; init; } = "OPTIMAL";
     }
 

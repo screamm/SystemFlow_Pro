@@ -1,34 +1,34 @@
-# Sprint 3 — Arkitektur & testbarhet
+# Sprint 3 — Architecture & testability
 
-**Mål:** Extrahera hårdvarulagret från `MainWindow`. Introducera minimal MVVM så UI blir testbart. Etablera enhetstestprojekt. Minska `MainWindow.xaml.cs` från 1232 rader till <400.
+**Goal:** Extract the hardware layer from `MainWindow`. Introduce minimal MVVM so the UI becomes testable. Establish a unit test project. Reduce `MainWindow.xaml.cs` from 1232 lines to <400.
 
-**Varaktighet:** 2 veckor (~60-80h)
+**Duration:** 2 weeks (~60-80h)
 **Branch:** `sprint-03-arkitektur`
-**Målversion:** v1.1.0-beta.1 (efter Sprint 4)
-**Förutsättningar:** Sprint 1 + 2 klara
+**Target version:** v1.1.0-beta.1 (after Sprint 4)
+**Prerequisites:** Sprints 1 + 2 complete
 
-**Utgångsläge:** Stabilt och snabbt, men fortfarande en god-class. Noll tester, noll separation av UI/logik/data.
+**Starting point:** Stable and fast, but still a god class. Zero tests, zero separation of UI/logic/data.
 
 ---
 
-## Sprintmål
+## Sprint goal
 
-- [ ] `Services/HardwareService.cs` — all LHM + WMI-logik isolerad
-- [ ] `Services/SystemInfoService.cs` — OS-version, username, hårdvaru-namn
-- [ ] `Models/SystemSnapshot.cs` — immutable record med all tick-data
-- [ ] `ViewModels/MainViewModel.cs` — `INotifyPropertyChanged`, binding-target
-- [ ] `MainWindow.xaml` binder mot `MainViewModel` (ingen `x:Name`-manipulering)
-- [ ] `MainWindow.xaml.cs` ≤ 400 rader (endast lifecycle + window chrome)
-- [ ] `Tests/SystemFlow.Tests.csproj` med minst 15 gröna tester
-- [ ] CI-körning av tester förberedd (full workflow kommer i Sprint 5)
+- [ ] `Services/HardwareService.cs` — all LHM + WMI logic isolated
+- [ ] `Services/SystemInfoService.cs` — OS version, username, hardware names
+- [ ] `Models/SystemSnapshot.cs` — immutable record with all tick data
+- [ ] `ViewModels/MainViewModel.cs` — `INotifyPropertyChanged`, binding target
+- [ ] `MainWindow.xaml` binds to `MainViewModel` (no `x:Name` manipulation)
+- [ ] `MainWindow.xaml.cs` ≤ 400 lines (only lifecycle + window chrome)
+- [ ] `Tests/SystemFlow.Tests.csproj` with at least 15 passing tests
+- [ ] CI execution of tests prepared (full workflow comes in Sprint 5)
 
 ---
 
 ## Tasks
 
-### T3.1 [P0] Skapa filstruktur
-**Var:** Nya mappar i projektroten
-**Åtgärd:**
+### T3.1 [P0] Create file structure
+**Where:** New folders in the project root
+**Action:**
 ```
 SystemFlow_Pro/
   Models/
@@ -39,22 +39,22 @@ SystemFlow_Pro/
   Services/
     HardwareService.cs
     SystemInfoService.cs
-    SettingsService.cs    (för polling-intervall mm, används från Sprint 4)
-    Logger.cs             (flyttas från Sprint 1)
+    SettingsService.cs    (for polling interval etc., used from Sprint 4)
+    Logger.cs             (moved from Sprint 1)
   ViewModels/
     MainViewModel.cs
-    ObservableObject.cs   (bas med INotifyPropertyChanged)
+    ObservableObject.cs   (base with INotifyPropertyChanged)
   Views/
-    MainWindow.xaml(.cs)   (flyttas eventuellt hit, eller lämna i root)
+    MainWindow.xaml(.cs)   (optionally moved here, or left in root)
     SplashWindow.xaml(.cs)
 ```
-**DoD:** Projektet kompilerar efter mappning (uppdatera csproj vid behov — .NET 9 auto-inkluderar `.cs`-filer rekursivt).
-**Estimat:** 1h
+**DoD:** The project compiles after the mapping (update csproj if needed — .NET 9 auto-includes `.cs` files recursively).
+**Estimate:** 1h
 
-### T3.2 [P0] Extrahera `HardwareService`
-**Var:** Ny fil `Services/HardwareService.cs`, källa: MainWindow.xaml.cs rader 88-120 (Computer init) + alla getters (`GetGpuUsage`, `GetAverageTemperature`, `GetThermalData`, `TryLibreHardwareMonitorFans`, `GetGpuInfo`, `GetTotalMemoryGB`, `GetHardwareInfo`, `GetFriendlyOSName` — ca 600 rader totalt).
-**Varför:** Utan separation är logiken otestbar och inte återanvändbar.
-**Åtgärd:**
+### T3.2 [P0] Extract `HardwareService`
+**Where:** New file `Services/HardwareService.cs`, source: MainWindow.xaml.cs lines 88-120 (Computer init) + all getters (`GetGpuUsage`, `GetAverageTemperature`, `GetThermalData`, `TryLibreHardwareMonitorFans`, `GetGpuInfo`, `GetTotalMemoryGB`, `GetHardwareInfo`, `GetFriendlyOSName` — approx. 600 lines total).
+**Why:** Without separation the logic is untestable and not reusable.
+**Action:**
 ```csharp
 public interface IHardwareService : IDisposable
 {
@@ -67,8 +67,8 @@ public sealed class HardwareService : IHardwareService
 {
     private readonly Computer _computer;
     private readonly UpdateVisitor _visitor = new();
-    private readonly float _totalMemoryGB; // cachad vid init
-    // ... alla private helpers
+    private readonly float _totalMemoryGB; // cached at init
+    // ... all private helpers
 
     public async Task<SystemSnapshot> CollectSnapshotAsync(CancellationToken ct = default)
     {
@@ -84,12 +84,12 @@ public sealed class HardwareService : IHardwareService
     }
 }
 ```
-**DoD:** `MainWindow` innehåller inte längre `using LibreHardwareMonitor.Hardware;` eller `using System.Management;`.
-**Estimat:** 12h
+**DoD:** `MainWindow` no longer contains `using LibreHardwareMonitor.Hardware;` or `using System.Management;`.
+**Estimate:** 12h
 
-### T3.3 [P0] Definiera `SystemSnapshot`-modellen
-**Var:** `Models/SystemSnapshot.cs`
-**Åtgärd:**
+### T3.3 [P0] Define the `SystemSnapshot` model
+**Where:** `Models/SystemSnapshot.cs`
+**Action:**
 ```csharp
 public sealed record SystemSnapshot(
     DateTime Timestamp,
@@ -103,19 +103,19 @@ public sealed record SystemSnapshot(
     float UsedMemoryGB,
     IReadOnlyList<FanInfo> Fans,
     IReadOnlyList<ThermalReading> AdditionalThermal,
-    string SystemStatus  // OPTIMAL | MEDIUMBELASTNING | HÖG BELASTNING
+    string SystemStatus  // OPTIMAL | MEDIUM LOAD | HIGH LOAD
 );
 
 public sealed record CpuCoreInfo(int Index, string Name, float UsagePercent, float? TemperatureC);
 public sealed record FanInfo(string Name, float? Rpm, float? PwmPercent, bool IsZeroRpmMode);
 public sealed record ThermalReading(string Name, float TemperatureC, string Source);
 ```
-**DoD:** Records kompilerar, fält korrelerar till alla värden UI:n visar.
-**Estimat:** 1h
+**DoD:** Records compile, fields correlate to all values the UI displays.
+**Estimate:** 1h
 
-### T3.4 [P0] Implementera `ObservableObject` + `MainViewModel`
-**Var:** `ViewModels/ObservableObject.cs` + `ViewModels/MainViewModel.cs`
-**Åtgärd:**
+### T3.4 [P0] Implement `ObservableObject` + `MainViewModel`
+**Where:** `ViewModels/ObservableObject.cs` + `ViewModels/MainViewModel.cs`
+**Action:**
 ```csharp
 public abstract class ObservableObject : INotifyPropertyChanged
 {
@@ -139,7 +139,7 @@ public sealed class MainViewModel : ObservableObject
 
     public ObservableCollection<CpuCoreVm> CpuCores { get; } = new();
     public ObservableCollection<FanVm> Fans { get; } = new();
-    // Wrap records i VM-klasser om binding kräver mutable
+    // Wrap records in VM classes if binding requires mutable
 
     public MainViewModel(IHardwareService hardware) { _hardware = hardware; /* timer setup */ }
 
@@ -152,18 +152,18 @@ public sealed class MainViewModel : ObservableObject
     private void ApplySnapshot(SystemSnapshot s)
     {
         CpuUsage = s.CpuUsagePercent;
-        // merge CpuCores into observable collection by index (uppdatera inplace)
+        // merge CpuCores into observable collection by index (update in place)
     }
 }
 ```
-**DoD:** ViewModel kompilerar, kan instansieras med mock-`IHardwareService`.
-**Estimat:** 8h
+**DoD:** ViewModel compiles, can be instantiated with a mock `IHardwareService`.
+**Estimate:** 8h
 
-### T3.5 [P0] Binda XAML mot ViewModel
-**Var:** `MainWindow.xaml` + `MainWindow.xaml.cs`
-**Åtgärd:**
-- I constructor: `DataContext = new MainViewModel(App.HardwareService);`
-- Ersätt alla `x:Name`-uppdateringar i code-behind med `{Binding PropertyName}` i XAML:
+### T3.5 [P0] Bind XAML to ViewModel
+**Where:** `MainWindow.xaml` + `MainWindow.xaml.cs`
+**Action:**
+- In constructor: `DataContext = new MainViewModel(App.HardwareService);`
+- Replace all `x:Name` updates in code-behind with `{Binding PropertyName}` in XAML:
 ```xml
 <TextBlock Text="{Binding CpuUsageDisplay}" Foreground="{Binding CpuStatusBrush}"/>
 <ProgressBar Value="{Binding CpuUsage}"/>
@@ -175,14 +175,14 @@ public sealed class MainViewModel : ObservableObject
     </ItemsControl.ItemTemplate>
 </ItemsControl>
 ```
-- Lägg till value converters där behövs (`PercentFormatConverter`, `TempColorConverter`)
-- Behåll code-behind endast för: window chrome (dragmove, min/close-knappar), window state change för timer-paus
-**DoD:** `MainWindow.xaml.cs` ≤ 400 rader. Inga `.Text =` tilldelningar (bara binding).
-**Estimat:** 12h
+- Add value converters where needed (`PercentFormatConverter`, `TempColorConverter`)
+- Keep code-behind only for: window chrome (dragmove, min/close buttons), window state change for timer pause
+**DoD:** `MainWindow.xaml.cs` ≤ 400 lines. No `.Text =` assignments (only binding).
+**Estimate:** 12h
 
-### T3.6 [P1] Skapa testprojekt
-**Var:** Ny mapp `Tests/SystemFlow.Tests/` med egen `SystemFlow.Tests.csproj`
-**Åtgärd:**
+### T3.6 [P1] Create test project
+**Where:** New folder `Tests/SystemFlow.Tests/` with its own `SystemFlow.Tests.csproj`
+**Action:**
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
@@ -202,60 +202,60 @@ public sealed class MainViewModel : ObservableObject
   </ItemGroup>
 </Project>
 ```
-Lägg till i `SystemFlow_Pro.sln`.
-**DoD:** `dotnet test` kör och rapporterar "0 tests" utan fel.
-**Estimat:** 1h
+Add to `SystemFlow_Pro.sln`.
+**DoD:** `dotnet test` runs and reports "0 tests" without errors.
+**Estimate:** 1h
 
-### T3.7 [P1] Enhetstester: statuslogik
-**Var:** `Tests/SystemFlow.Tests/SystemStatusTests.cs`
-**Åtgärd:** Extrahera tröskellogiken (som idag ligger i `UpdateDetailedPanels`) till `SystemStatusEvaluator.Evaluate(snapshot)`. Testa:
+### T3.7 [P1] Unit tests: status logic
+**Where:** `Tests/SystemFlow.Tests/SystemStatusTests.cs`
+**Action:** Extract the threshold logic (currently in `UpdateDetailedPanels`) into `SystemStatusEvaluator.Evaluate(snapshot)`. Test:
 ```csharp
 [Theory]
 [InlineData(30, 40, "OPTIMAL")]
-[InlineData(65, 70, "MEDIUMBELASTNING")]
-[InlineData(85, 90, "HÖG BELASTNING")]
+[InlineData(65, 70, "MEDIUM LOAD")]
+[InlineData(85, 90, "HIGH LOAD")]
 public void Evaluate_ReturnsExpectedStatus(float cpu, float gpu, string expected)
 {
     var snap = new SystemSnapshot(... cpu, gpu ...);
     SystemStatusEvaluator.Evaluate(snap).Should().Be(expected);
 }
 ```
-Täck också edge cases: null-temps, tomma core-listor, >100% usage (ogiltigt).
-**DoD:** Minst 6 gröna tester för statuslogiken.
-**Estimat:** 3h
+Also cover edge cases: null temps, empty core lists, >100% usage (invalid).
+**DoD:** At least 6 passing tests for the status logic.
+**Estimate:** 3h
 
-### T3.8 [P1] Enhetstester: `GetFriendlyOSName`
-**Var:** `Tests/SystemFlow.Tests/SystemInfoServiceTests.cs`
-**Åtgärd:** Om `GetFriendlyOSName` tar OS-version som parameter (inte läser från miljö) kan den testas direkt:
+### T3.8 [P1] Unit tests: `GetFriendlyOSName`
+**Where:** `Tests/SystemFlow.Tests/SystemInfoServiceTests.cs`
+**Action:** If `GetFriendlyOSName` takes the OS version as a parameter (rather than reading from environment) it can be tested directly:
 ```csharp
 [InlineData(10, 0, 22000, "Windows 11")]
 [InlineData(10, 0, 19045, "Windows 10 22H2")]
 [InlineData(6, 3, 0, "Windows 8.1")]
 ```
-Annars: refaktorera så versionsuppslagning tar `Version` som argument.
-**DoD:** Minst 4 gröna tester.
-**Estimat:** 2h
+Otherwise: refactor so version lookup takes `Version` as an argument.
+**DoD:** At least 4 passing tests.
+**Estimate:** 2h
 
-### T3.9 [P1] Enhetstester: fläkt-klassificering
-**Var:** `Tests/SystemFlow.Tests/FanInfoTests.cs`
-**Åtgärd:** Testa logiken som separerar RPM vs procent, identifierar zero-RPM-mode, mappar sensor-typ till FanInfo.
-**DoD:** Minst 5 gröna tester inklusive zero-RPM, pumpsensor, vanlig fläkt.
-**Estimat:** 3h
+### T3.9 [P1] Unit tests: fan classification
+**Where:** `Tests/SystemFlow.Tests/FanInfoTests.cs`
+**Action:** Test the logic that separates RPM vs percent, identifies zero-RPM mode, maps sensor type to FanInfo.
+**DoD:** At least 5 passing tests including zero-RPM, pump sensor, normal fan.
+**Estimate:** 3h
 
-### T3.10 [P1] Integrationstest: `HardwareService` lifecycle
-**Var:** `Tests/SystemFlow.Tests/HardwareServiceTests.cs`
-**Åtgärd:** Verifiera att:
-- `CollectSnapshotAsync()` returnerar en snapshot utan att kasta på normal hårdvara
-- `Dispose()` anropas säkert och stänger `Computer`
-- Två parallella `CollectSnapshotAsync` serialiseras korrekt (inte krasch)
-Markera test som `[Trait("Category", "Integration")]` — kräver riktig hårdvara, körs inte alltid i CI.
-**DoD:** 3 gröna tester markerade som integration.
-**Estimat:** 3h
+### T3.10 [P1] Integration test: `HardwareService` lifecycle
+**Where:** `Tests/SystemFlow.Tests/HardwareServiceTests.cs`
+**Action:** Verify that:
+- `CollectSnapshotAsync()` returns a snapshot without throwing on normal hardware
+- `Dispose()` is called safely and closes `Computer`
+- Two parallel `CollectSnapshotAsync` calls serialize correctly (no crash)
+Mark tests with `[Trait("Category", "Integration")]` — requires real hardware, not always run in CI.
+**DoD:** 3 passing tests marked as integration.
+**Estimate:** 3h
 
-### T3.11 [P2] Settings-backing via `SettingsService`
-**Var:** `Services/SettingsService.cs`
-**Varför:** Sprint 4 behöver detta för Settings-UI.
-**Åtgärd:**
+### T3.11 [P2] Settings backing via `SettingsService`
+**Where:** `Services/SettingsService.cs`
+**Why:** Sprint 4 needs this for the Settings UI.
+**Action:**
 ```csharp
 public sealed record AppSettings(
     int PollIntervalMs = 2000,
@@ -265,26 +265,26 @@ public sealed record AppSettings(
 );
 
 public interface ISettingsService { AppSettings Current { get; } Task SaveAsync(AppSettings s); }
-public sealed class JsonSettingsService : ISettingsService { /* System.Text.Json till %APPDATA% */ }
+public sealed class JsonSettingsService : ISettingsService { /* System.Text.Json to %APPDATA% */ }
 ```
-**DoD:** `SettingsService` kan läsa/skriva `settings.json`, defaults returneras vid första körning.
-**Estimat:** 3h
+**DoD:** `SettingsService` can read/write `settings.json`, defaults returned on first run.
+**Estimate:** 3h
 
-### T3.12 [P2] Dokumentera arkitekturen
-**Var:** Ny fil `docs/ARCHITECTURE.md`
-**Åtgärd:** Kort beskrivning: lagerdiagram (View → ViewModel → Services → LHM/WMI), varför MVVM-lite, vad som är testbart. Ska räcka för att en ny utvecklare förstår strukturen på 15 min.
-**DoD:** Mermaid-diagram + 2-3 stycken prosa.
-**Estimat:** 2h
-
----
-
-## Risk & beroenden
-
-- **T3.2 (HardwareService)** är sprintens hårda nöt. Om `MainWindow` har dolda couplings (statiska fält, events tillbaka till UI) kan det ta 2x estimatet.
-- **T3.5 (XAML-binding)** kräver att du behärskar value converters och `ItemsControl` — planera in tid för att lära/repetera om osäker.
-- **Tester** kan kännas omöjliga om service-interfacen läcker `Computer`-objekt. Håll interfacen rena — använd records som DTO:er över tråd-gränsen.
-- Efter denna sprint är rullning tillbaka dyr. Tagga v1.0.10 före start.
+### T3.12 [P2] Document the architecture
+**Where:** New file `docs/ARCHITECTURE.md`
+**Action:** Short description: layer diagram (View → ViewModel → Services → LHM/WMI), why MVVM-lite, what is testable. Should be enough for a new developer to understand the structure in 15 minutes.
+**DoD:** Mermaid diagram + 2-3 paragraphs of prose.
+**Estimate:** 2h
 
 ---
 
-## Retro (fyll i efter sprint)
+## Risk & dependencies
+
+- **T3.2 (HardwareService)** is the sprint's tough nut. If `MainWindow` has hidden couplings (static fields, events back to UI) it may take 2x the estimate.
+- **T3.5 (XAML binding)** requires mastery of value converters and `ItemsControl` — plan time to learn/review if uncertain.
+- **Tests** may feel impossible if service interfaces leak `Computer` objects. Keep interfaces clean — use records as DTOs across thread boundaries.
+- After this sprint, rolling back is expensive. Tag v1.0.10 before starting.
+
+---
+
+## Retrospective (fill in after sprint)

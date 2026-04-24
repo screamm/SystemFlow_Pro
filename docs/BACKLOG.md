@@ -1,74 +1,74 @@
 # SystemFlow Pro — Backlog
 
-Punkter som inte togs med i v1.1.0 men är värda att överväga för framtida
-versioner. Ordnad efter grov prioritet.
+Items that were not included in v1.1.0 but are worth considering for future
+versions. Ordered by rough priority.
 
-## Hög prioritet (v1.1.1 — bugfix-release)
+## High priority (v1.1.1 — bugfix release)
 
-- [ ] **°F-konvertering** i rendering. Settings-dialogen erbjuder °C/°F men
-      konvertering av visade värden måste slutföras.
-- [ ] **Git history-cleanup** — kör `git filter-repo --path releases
-      --invert-paths` för att ta bort 800+ MB gamla release-artefakter ur
-      historiken. Destruktiv — koordinera med ev. forks.
-- [ ] **Ta bort obsoleta build-scripts** (`build_release_v1.0.X.bat`).
-      Ersätts helt av enade `build.bat`.
+- [ ] **°F conversion** in rendering. The Settings dialog offers °C/°F but
+      conversion of displayed values must be completed.
+- [ ] **Git history cleanup** — run `git filter-repo --path releases
+      --invert-paths` to remove 800+ MB of old release artifacts from
+      the history. Destructive — coordinate with any forks.
+- [ ] **Remove obsolete build scripts** (`build_release_v1.0.X.bat`).
+      Fully replaced by the unified `build.bat`.
 
-## Avfört (inte planerat)
+## Not planned
 
-- **Code-signing.** Ej planerat. SystemFlow Pro distribueras osignerat som
-  öppen källkod — kostnad (200-500 USD/år) motiveras inte för ett gratis
-  projekt. Användare hanterar SmartScreen via "Mer info" → "Kör ändå" och
-  kan granska all kod på GitHub. Dokumenterat i README och FAQ.
+- **Code signing.** Not planned. SystemFlow Pro is distributed unsigned as
+  open source — the cost (200-500 USD/year) is not justified for a free
+  project. Users handle SmartScreen via "More info" → "Run anyway" and
+  can review all code on GitHub. Documented in README and FAQ.
 
-## Medel prioritet (v1.2.0 — feature-release)
+## Medium priority (v1.2.0 — feature release)
 
-- [ ] **Mica-backdrop** (Windows 11). DwmSetWindowAttribute-interop via
-      Win32-API. Fallback till platt bakgrund på Win10.
-- [ ] **Auto-update-nedladdning.** Idag visar update-checken bara en länk.
-      Implementera Velopack eller Squirrel för in-app nedladdning +
+- [ ] **Mica backdrop** (Windows 11). DwmSetWindowAttribute interop via
+      the Win32 API. Fallback to a flat background on Win10.
+- [ ] **Auto-update download.** Today the update check only shows a link.
+      Implement Velopack or Squirrel for in-app download +
       auto-patching.
-- [ ] **Engelsk lokalisering.** Idag bara svenska. `Resources/Strings.resx`
+- [ ] **English localization.** Currently only Swedish. `Resources/Strings.resx`
       + `Strings.en.resx`.
-- [ ] **Export metrics till CSV.** Knapp "Spara mätdata" i header eller
-      Settings som skriver current snapshot till CSV.
-- [ ] **Historik-läge.** Spara senaste N snapshots i minne, visa som
-      mini-diagram per hero-kort.
-- [ ] **Full XAML-binding konvertering.** MainWindow.xaml.cs renderar
-      fortfarande paneler imperativt. Konvertera till `ItemsControl` +
-      `DataTemplate` + value converters för ren MVVM.
-- [ ] **Settings: filter sensorer.** Låt användaren dölja specifika
-      sensorer som inte är intressanta.
-- [ ] **Widget-läge.** Always-on-top mini-fönster med bara hero-värdena.
+- [ ] **Export metrics to CSV.** "Save metrics" button in the header or
+      Settings that writes the current snapshot to CSV.
+- [ ] **History mode.** Keep the latest N snapshots in memory, display as
+      mini-charts per hero card.
+- [ ] **Full XAML binding conversion.** MainWindow.xaml.cs still renders
+      panels imperatively. Convert to `ItemsControl` +
+      `DataTemplate` + value converters for pure MVVM.
+- [ ] **Settings: filter sensors.** Let the user hide specific
+      sensors that are not of interest.
+- [ ] **Widget mode.** Always-on-top mini window with only the hero values.
 
-## Låg prioritet (v1.3+ eller backlog)
+## Low priority (v1.3+ or backlog)
 
-- [ ] **Cross-platform via MAUI eller Avalonia** — Linux/macOS-stöd.
-      Kräver annan sensorkälla (`/sys/class/hwmon/` på Linux).
-- [ ] **Grafer över tid** (full historikvy med diagram per sensor).
-- [ ] **Mörka/ljusa teman** — idag bara mörkt.
-- [ ] **Fler språk** — tyska, finska, norska.
-- [ ] **Åldersspridda sensor-stöd** — tydlig indikation när en sensor inte
-      stöds + varför (log-entry i UI).
-- [ ] **Benchmarkintegration** — kör Cinebench/3DMark och visa resultat
-      bredvid live-data.
-- [ ] **MQTT/REST-endpoint** — exponera sensorer till Home Assistant.
+- [ ] **Cross-platform via MAUI or Avalonia** — Linux/macOS support.
+      Requires a different sensor source (`/sys/class/hwmon/` on Linux).
+- [ ] **Charts over time** (full history view with a chart per sensor).
+- [ ] **Dark/light themes** — currently dark only.
+- [ ] **More languages** — German, Finnish, Norwegian.
+- [ ] **Age-spread sensor support** — clear indication when a sensor is not
+      supported + why (log entry in the UI).
+- [ ] **Benchmark integration** — run Cinebench/3DMark and show the results
+      alongside live data.
+- [ ] **MQTT/REST endpoint** — expose sensors to Home Assistant.
 
-## Tekniska skulder
+## Technical debt
 
-- [ ] **Fler enhetstester** — ViewModel-beteende (tick-skip, paus-återuppta,
-      settings-apply). Kräver mock IHardwareService + Dispatcher-stub.
-- [ ] **Integration-tester** för HardwareService — kräver hårdvara, märk
+- [ ] **More unit tests** — ViewModel behavior (tick skip, pause-resume,
+      settings apply). Requires mock IHardwareService + Dispatcher stub.
+- [ ] **Integration tests** for HardwareService — requires hardware, tag
       `[Trait("Category", "Integration")]`.
-- [ ] **Performance-benchmarks** — BenchmarkDotNet på `HardwareService.CollectSnapshot`
-      för att fånga regressioner.
-- [ ] **Remove old build_release_v1.0.X.bat** — obsoleta efter Sprint 5.
-- [ ] **Legacy scripts-mapp** — `scripts/claude_autonomous_loop.py` är
-      dev-tooling, hör inte hemma i produktionsrepo.
-- [ ] **README: bygga steg** — dokumentera `build.bat [version]` bättre,
-      inkludera förväntad output-storlek.
+- [ ] **Performance benchmarks** — BenchmarkDotNet on `HardwareService.CollectSnapshot`
+      to catch regressions.
+- [ ] **Remove old build_release_v1.0.X.bat** — obsolete after Sprint 5.
+- [ ] **Legacy scripts folder** — `scripts/claude_autonomous_loop.py` is
+      dev tooling and does not belong in a production repo.
+- [ ] **README: build steps** — document `build.bat [version]` better,
+      including expected output size.
 
-## Öppna frågor
+## Open questions
 
-- Ska vi lägga till Sentry eller annan crash-reporting? Opt-in, GDPR-kompatibelt.
-- Vilka fler lokaliseringar är värda — kolla GitHub Issues för förfrågningar.
-- Finns det användare som vill ha CLI-läge (ingen UI, bara logging till CSV)?
+- Should we add Sentry or another crash reporter? Opt-in, GDPR compliant.
+- Which additional localizations are worth doing — check GitHub Issues for requests.
+- Are there users who want a CLI mode (no UI, only logging to CSV)?

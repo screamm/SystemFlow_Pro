@@ -246,18 +246,18 @@
                     <Button x:Name="SettingsButton"
                             Style="{StaticResource ChromeButton}"
                             Content="&#xE713;"
-                            ToolTip="Inställningar"
-                            AutomationProperties.Name="Öppna inställningar"
-                            AutomationProperties.HelpText="Ändra pollingintervall, temperaturenhet och startbeteende"
+                            ToolTip="Settings"
+                            AutomationProperties.Name="Open settings"
+                            AutomationProperties.HelpText="Change polling interval, temperature unit and startup behavior"
                             TabIndex="101"
                             Click="SettingsButton_Click"/>
 
                     <Button x:Name="AboutButton"
                             Style="{StaticResource ChromeButton}"
                             Content="&#xE946;"
-                            ToolTip="Om SystemFlow Pro"
-                            AutomationProperties.Name="Om SystemFlow Pro"
-                            AutomationProperties.HelpText="Visa version, licens och tredjepart"
+                            ToolTip="About SystemFlow Pro"
+                            AutomationProperties.Name="About SystemFlow Pro"
+                            AutomationProperties.HelpText="Show version, license and third-party libraries"
                             TabIndex="102"
                             Click="AboutButton_Click"/>
 
@@ -266,24 +266,24 @@
                     <Button x:Name="MinimizeButton"
                             Style="{StaticResource ChromeButton}"
                             Content="&#xE921;"
-                            ToolTip="Minimera (Win+Down)"
-                            AutomationProperties.Name="Minimera fönster"
+                            ToolTip="Minimize (Win+Down)"
+                            AutomationProperties.Name="Minimize window"
                             TabIndex="103"
                             Click="MinimizeButton_Click"/>
 
                     <Button x:Name="MaximizeButton"
                             Style="{StaticResource ChromeButton}"
                             Content="&#xE922;"
-                            ToolTip="Maximera (Win+Up)"
-                            AutomationProperties.Name="Maximera fönster"
+                            ToolTip="Maximize (Win+Up)"
+                            AutomationProperties.Name="Maximize window"
                             TabIndex="104"
                             Click="MaximizeButton_Click"/>
 
                     <Button x:Name="CloseButton"
                             Style="{StaticResource CloseChromeButton}"
                             Content="&#xE8BB;"
-                            ToolTip="Stäng (Alt+F4)"
-                            AutomationProperties.Name="Stäng programmet"
+                            ToolTip="Close (Alt+F4)"
+                            AutomationProperties.Name="Close application"
                             TabIndex="105"
                             Click="CloseButton_Click"/>
                 </StackPanel>
@@ -301,7 +301,7 @@
 
             <!-- CPU Hero Card -->
             <Border Grid.Column="0" Style="{StaticResource HeroCard}" Margin="8"
-                    AutomationProperties.Name="CPU belastning">
+                    AutomationProperties.Name="CPU load">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -324,8 +324,8 @@
 
                     <TextBlock Grid.Row="2" x:Name="CpuValueText" Text="0%"
                                Style="{StaticResource HeroValue}" Margin="0,12"
-                               ToolTip="CPU total belastning. Varning vid 80%."
-                               AutomationProperties.Name="CPU belastning aktuellt värde"
+                               ToolTip="CPU total load. Warning at 80%."
+                               AutomationProperties.Name="CPU load current value"
                                AutomationProperties.LiveSetting="Polite">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -335,14 +335,14 @@
                         </TextBlock.Foreground>
                     </TextBlock>
 
-                    <TextBlock Grid.Row="3" Text="CPU BELASTNING"
+                    <TextBlock Grid.Row="3" Text="CPU LOAD"
                                Style="{StaticResource HeroLabel}" Margin="0,0,0,12"/>
                 </Grid>
             </Border>
 
             <!-- GPU Hero Card -->
             <Border Grid.Column="1" Style="{StaticResource HeroCard}" Margin="8"
-                    AutomationProperties.Name="GPU belastning">
+                    AutomationProperties.Name="GPU load">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -365,8 +365,8 @@
 
                     <TextBlock Grid.Row="2" x:Name="GpuValueText" Text="0%"
                                Style="{StaticResource HeroValue}" Margin="0,12"
-                               ToolTip="GPU total belastning. Används av 3D och compute."
-                               AutomationProperties.Name="GPU belastning aktuellt värde"
+                               ToolTip="GPU total load. Used by 3D and compute workloads."
+                               AutomationProperties.Name="GPU load current value"
                                AutomationProperties.LiveSetting="Polite">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -376,14 +376,14 @@
                         </TextBlock.Foreground>
                     </TextBlock>
 
-                    <TextBlock Grid.Row="3" Text="GPU BELASTNING"
+                    <TextBlock Grid.Row="3" Text="GPU LOAD"
                                Style="{StaticResource HeroLabel}" Margin="0,0,0,12"/>
                 </Grid>
             </Border>
 
             <!-- Memory Hero Card -->
             <Border Grid.Column="2" Style="{StaticResource HeroCard}" Margin="8"
-                    AutomationProperties.Name="Minnesanvändning">
+                    AutomationProperties.Name="Memory usage">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -406,8 +406,8 @@
 
                     <TextBlock Grid.Row="2" x:Name="MemoryValueText" Text="0%"
                                Style="{StaticResource HeroValue}" Margin="0,12"
-                               ToolTip="Minnesanvändning i procent. Varning vid 85%."
-                               AutomationProperties.Name="Minnesanvändning aktuellt värde"
+                               ToolTip="Memory usage in percent. Warning at 85%."
+                               AutomationProperties.Name="Memory usage current value"
                                AutomationProperties.LiveSetting="Polite">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -417,14 +417,14 @@
                         </TextBlock.Foreground>
                     </TextBlock>
 
-                    <TextBlock Grid.Row="3" Text="MINNESANVÄNDNING"
+                    <TextBlock Grid.Row="3" Text="MEMORY USAGE"
                                Style="{StaticResource HeroLabel}" Margin="0,0,0,12"/>
                 </Grid>
             </Border>
 
             <!-- Temperature Hero Card -->
             <Border Grid.Column="3" Style="{StaticResource HeroCard}" Margin="8"
-                    AutomationProperties.Name="Medeltemperatur">
+                    AutomationProperties.Name="Average temperature">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>
@@ -447,8 +447,8 @@
 
                     <TextBlock Grid.Row="2" x:Name="TempValueText" Text="0°C"
                                Style="{StaticResource HeroValue}" Margin="0,12"
-                               ToolTip="Medel av alla tillgängliga temperatursensorer. Varning vid 75°C."
-                               AutomationProperties.Name="Medeltemperatur aktuellt värde"
+                               ToolTip="Average of all available temperature sensors. Warning at 75°C."
+                               AutomationProperties.Name="Average temperature current value"
                                AutomationProperties.LiveSetting="Polite">
                         <TextBlock.Foreground>
                             <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
@@ -458,7 +458,7 @@
                         </TextBlock.Foreground>
                     </TextBlock>
 
-                    <TextBlock Grid.Row="3" Text="TEMPERATUR"
+                    <TextBlock Grid.Row="3" Text="TEMPERATURE"
                                Style="{StaticResource HeroLabel}" Margin="0,0,0,12"/>
                 </Grid>
             </Border>
@@ -474,14 +474,14 @@
             </Grid.ColumnDefinitions>
 
             <Border Grid.Column="0" Style="{StaticResource ModernCard}" Margin="8"
-                    AutomationProperties.Name="CPU-kärnor och fläktar">
+                    AutomationProperties.Name="CPU cores and fans">
                 <StackPanel Margin="20">
                     <TextBlock Text="CPU CORES" Style="{StaticResource SectionHeader}"/>
                     <ScrollViewer MaxHeight="420" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="CpuCoresPanel" Margin="0,0,0,12"/>
                     </ScrollViewer>
 
-                    <TextBlock Text="CPU KYLNING" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
+                    <TextBlock Text="CPU COOLING" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
                     <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="CpuFansPanel"/>
                     </ScrollViewer>
@@ -489,14 +489,14 @@
             </Border>
 
             <Border Grid.Column="1" Style="{StaticResource ModernCard}" Margin="8"
-                    AutomationProperties.Name="GPU information och fläktar">
+                    AutomationProperties.Name="GPU information and fans">
                 <StackPanel Margin="20">
                     <TextBlock Text="GPU INFORMATION" Style="{StaticResource SectionHeader}"/>
                     <ScrollViewer MaxHeight="500" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="GpuInfoPanel" Margin="0,0,0,12"/>
                     </ScrollViewer>
 
-                    <TextBlock Text="GPU KYLNING" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
+                    <TextBlock Text="GPU COOLING" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
                     <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="SystemFansPanel"/>
                     </ScrollViewer>
@@ -504,15 +504,15 @@
             </Border>
 
             <Border Grid.Column="2" Style="{StaticResource ModernCard}" Margin="8"
-                    AutomationProperties.Name="Minne och termala sensorer">
+                    AutomationProperties.Name="Memory and thermal sensors">
                 <StackPanel Margin="20">
-                    <TextBlock Text="MINNESSTATUS" Style="{StaticResource SectionHeader}"/>
+                    <TextBlock Text="MEMORY STATUS" Style="{StaticResource SectionHeader}"/>
                     <StackPanel x:Name="MemoryPanel" Margin="0,0,0,16"/>
 
                     <ProgressBar x:Name="MemoryProgressBar" Height="8"
                                  Background="{StaticResource HighlightBrush}"
                                  BorderThickness="0" Margin="0,4,0,16"
-                                 AutomationProperties.Name="Minnesanvändning progressindikator">
+                                 AutomationProperties.Name="Memory usage progress indicator">
                         <ProgressBar.Foreground>
                             <LinearGradientBrush>
                                 <GradientStop Color="#FFA726" Offset="0"/>
@@ -521,7 +521,7 @@
                         </ProgressBar.Foreground>
                     </ProgressBar>
 
-                    <TextBlock Text="TEMPERATUR SENSORER" Style="{StaticResource SectionHeader}" Margin="0,12,0,0"/>
+                    <TextBlock Text="TEMPERATURE SENSORS" Style="{StaticResource SectionHeader}" Margin="0,12,0,0"/>
                     <ScrollViewer MaxHeight="340" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="ThermalPanel"/>
                     </ScrollViewer>
@@ -529,12 +529,12 @@
             </Border>
 
             <Border Grid.Column="3" Style="{StaticResource ModernCard}" Margin="8"
-                    AutomationProperties.Name="Systemstatus och hårdvaruinformation">
+                    AutomationProperties.Name="System status and hardware information">
                 <StackPanel Margin="20">
                     <TextBlock Text="SYSTEM STATUS" Style="{StaticResource SectionHeader}"/>
                     <StackPanel x:Name="SystemPanel" Margin="0,0,0,16"/>
 
-                    <TextBlock Text="HÅRDVARUINFO" Style="{StaticResource SectionHeader}" Margin="0,12,0,0"/>
+                    <TextBlock Text="HARDWARE INFO" Style="{StaticResource SectionHeader}" Margin="0,12,0,0"/>
                     <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="HardwarePanel"/>
                     </ScrollViewer>

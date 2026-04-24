@@ -1,6 +1,6 @@
 # SystemFlow Pro
 
-**Lätt och snabb systemövervakning för Windows — CPU, GPU, minne, temperaturer och fläktar i realtid.**
+**Lightweight and fast system monitoring for Windows — CPU, GPU, memory, temperatures, and fans in real time.**
 
 [![Platform](https://img.shields.io/badge/Platform-Windows%2010%2B-0078d4?style=flat-square&logo=windows)](https://www.microsoft.com/windows)
 [![.NET](https://img.shields.io/badge/.NET-9.0-512bd4?style=flat-square&logo=dotnet)](https://dotnet.microsoft.com/)
@@ -8,13 +8,13 @@
 
 ---
 
-## Översikt
+## Overview
 
-SystemFlow Pro är en öppen källkod systemövervakare för Windows byggd i
-.NET 9 + WPF. Visar CPU-belastning per kärna, GPU-status, minnesanvändning,
-temperatursensorer och fläkthastigheter i realtid. Designad för att vara
-ett snabbare, lättare alternativ till HWiNFO64 och andra stora
-övervakningsverktyg.
+SystemFlow Pro is an open source system monitor for Windows built with
+.NET 9 + WPF. It displays per-core CPU load, GPU status, memory usage,
+temperature sensors, and fan speeds in real time. Designed to be a
+faster, lighter alternative to HWiNFO64 and other large
+monitoring tools.
 
 ![SystemFlow Pro](screenshot.png)
 
@@ -22,21 +22,21 @@ ett snabbare, lättare alternativ till HWiNFO64 och andra stora
 
 ## Installation
 
-### Alternativ 1 — Ladda ner färdig exe (rekommenderat)
+### Option 1 — Download the prebuilt exe (recommended)
 
-1. Gå till [GitHub Releases](https://github.com/screamm/SystemFlow_Pro/releases/latest)
-2. Ladda ner `SystemFlow-Pro-vX.Y.Z-win-x64.zip`
-3. Packa upp och kör `SystemFlow-Pro.exe` — ingen installation, ingen .NET
-   runtime-installation behövs (self-contained single-file build)
+1. Go to [GitHub Releases](https://github.com/screamm/SystemFlow_Pro/releases/latest)
+2. Download `SystemFlow-Pro-vX.Y.Z-win-x64.zip`
+3. Extract and run `SystemFlow-Pro.exe` — no installation, no .NET
+   runtime installation required (self-contained single-file build)
 
-Första gången kan Windows SmartScreen varna "Windows Defender skyddade din
-dator". Klicka "Mer info" → "Kör ändå". SystemFlow Pro är öppen källkod och
-distribueras osignerat — all kod kan granskas på GitHub. Varningen minskar
-med tiden när appen byggt upp SmartScreen-rykte via nedladdningar.
+The first time you run it, Windows SmartScreen may warn "Windows Defender
+protected your PC". Click "More info" → "Run anyway". SystemFlow Pro is open source and
+distributed unsigned — all code can be reviewed on GitHub. The warning diminishes
+over time as the app builds SmartScreen reputation through downloads.
 
-### Alternativ 2 — Bygg från källkod
+### Option 2 — Build from source
 
-Krav: .NET 9 SDK (9.0.305 eller nyare, se `global.json`).
+Requirements: .NET 9 SDK (9.0.305 or newer, see `global.json`).
 
 ```bash
 git clone https://github.com/screamm/SystemFlow_Pro.git
@@ -45,114 +45,114 @@ dotnet restore
 dotnet run --project SystemMonitorApp.csproj
 ```
 
-För att skapa en self-contained distribution:
+To create a self-contained distribution:
 
 ```bash
 build.bat 1.1.0
 ```
 
-Ger `publish\v1.1.0\SystemFlow-Pro.exe` och `releases\SystemFlow-Pro-v1.1.0-win-x64.zip`.
+This produces `publish\v1.1.0\SystemFlow-Pro.exe` and `releases\SystemFlow-Pro-v1.1.0-win-x64.zip`.
 
-### Administratörsbehörighet
+### Administrator privileges
 
-Appen kräver administratörsrättigheter (`requireAdministrator` i manifestet).
-Windows UAC-prompten visas vid varje start. Detta är nödvändigt för att läsa
-MSR-register (CPU-temperatur på många moderna CPU:er), fläkt-sensorer via
-SuperIO-chip och vissa GPU-sensorer som annars är skyddade.
+The app requires administrator privileges (`requireAdministrator` in the manifest).
+The Windows UAC prompt appears at every startup. This is necessary to read
+MSR registers (CPU temperature on many modern CPUs), fan sensors via
+SuperIO chips, and certain GPU sensors that are otherwise protected.
 
-Utan admin skulle merparten av sensorerna returnera "N/A" på moderna system —
-därför har vi valt admin-by-default istället för degraderad upplevelse.
-
----
-
-## Funktioner
-
-| Kategori | Detaljer |
-|----------|----------|
-| CPU | Total belastning, per-kärna, temperatur, Package power |
-| GPU | NVIDIA / AMD / Intel belastning, temperatur, VRAM |
-| Minne | Total / använt / tillgängligt GB, procent, progressbar |
-| Temperaturer | Alla tillgängliga sensorer med färgkodning |
-| Fläktar | CPU / GPU / chassi / pump — RPM eller PWM-%, korrekt skilda |
-| System | OS-version, CPU-namn, kärnantal, aktiv användare |
-| Inställningar | Pollingintervall, °C/°F, pausa vid minimering |
-| Diagnostik | Fil-logger i `%APPDATA%\SystemFlow Pro\logs\` |
+Without admin, most sensors would return "N/A" on modern systems —
+so we chose admin-by-default rather than a degraded experience.
 
 ---
 
-## Tangentbordsgenvägar
+## Features
 
-| Gest | Funktion |
-|------|----------|
-| Win+↑ | Maximera |
-| Win+↓ | Minimera / återställ |
+| Category | Details |
+|----------|---------|
+| CPU | Total load, per-core, temperature, Package power |
+| GPU | NVIDIA / AMD / Intel load, temperature, VRAM |
+| Memory | Total / used / available GB, percent, progress bar |
+| Temperatures | All available sensors with color coding |
+| Fans | CPU / GPU / chassis / pump — RPM or PWM %, properly distinguished |
+| System | OS version, CPU name, core count, active user |
+| Settings | Polling interval, °C/°F, pause on minimize |
+| Diagnostics | File logger in `%APPDATA%\SystemFlow Pro\logs\` |
+
+---
+
+## Keyboard shortcuts
+
+| Gesture | Function |
+|---------|----------|
+| Win+↑ | Maximize |
+| Win+↓ | Minimize / restore |
 | Win+Z | Snap Layouts (Windows 11) |
-| Alt+F4 | Stäng |
-| Tab | Cykla fokus genom chrome-knappar |
+| Alt+F4 | Close |
+| Tab | Cycle focus through chrome buttons |
 
 ---
 
-## Teknisk information
+## Technical information
 
-- **Ramverk:** .NET 9, WPF
-- **Hårdvaruläsning:** LibreHardwareMonitor 0.9.4 (MPL 2.0)
-- **Arkitektur:** MVVM-lite med extraherat service-lager
-- **Testning:** 37 xUnit-tester (status-logik, OS-namnmappning, FanReading-modell)
-- **Trådning:** Bakgrundstråd för all hårdvaruläsning, UI uppdateras via
-  snapshot-mönster
-- **Polling:** 2 sekunder default (500ms–60s konfigurerbart)
+- **Framework:** .NET 9, WPF
+- **Hardware reading:** LibreHardwareMonitor 0.9.4 (MPL 2.0)
+- **Architecture:** MVVM-lite with an extracted service layer
+- **Testing:** 37 xUnit tests (status logic, OS name mapping, FanReading model)
+- **Threading:** Background thread for all hardware reading, UI updates via
+  snapshot pattern
+- **Polling:** 2 seconds default (500ms–60s configurable)
 
-Se [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) för lagerdiagram och
-designbeslut.
-
----
-
-## Felsökning
-
-**Appen startar inte — "Windows har skyddat din dator" / SmartScreen**
-Höger-klicka .exe → Egenskaper → bocka "Tillåt" → OK. Eller i varningsdialogen,
-klicka "Mer info" → "Kör ändå". SystemFlow Pro distribueras osignerat som
-öppen källkod — SmartScreen känner inte igen utgivaren förrän appen fått
-tillräckligt många nedladdningar. Koden kan granskas på GitHub.
-
-**Inga fläktar visas**
-Inte alla moderkort exponerar RPM via LHM/WMI. Starta appen som administratör
-för fler sensorer. Vissa GPU-fläktar i zero-RPM-mode visar "0 RPM" korrekt.
-
-**Temperaturer saknas**
-Äldre CPU:er har begränsat LibreHardwareMonitor-stöd. Se
-`%APPDATA%\SystemFlow Pro\logs\app-*.log` för detaljer.
-
-**Appen fryser eller är långsam**
-Öka pollingintervallet i Settings (⚙ i header) till 5 sekunder. Skicka
-gärna logg-filen till en [GitHub Issue](https://github.com/screamm/SystemFlow_Pro/issues)
-om problemet kvarstår.
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for layer diagrams and
+design decisions.
 
 ---
 
-## Sekretess
+## Troubleshooting
 
-SystemFlow Pro samlar inte in och skickar ingen personlig data. Uppstartens
-enda nätverksanrop är en versionskoll mot GitHub Releases API.
-Se [`PRIVACY.md`](PRIVACY.md) för detaljer.
+**The app does not start — "Windows protected your PC" / SmartScreen**
+Right-click the .exe → Properties → check "Unblock" → OK. Or in the warning dialog,
+click "More info" → "Run anyway". SystemFlow Pro is distributed unsigned as
+open source — SmartScreen does not recognize the publisher until the app has
+enough downloads. The code can be reviewed on GitHub.
+
+**No fans are displayed**
+Not all motherboards expose RPM via LHM/WMI. Start the app as administrator
+for additional sensors. Some GPU fans in zero-RPM mode correctly display "0 RPM".
+
+**Temperatures missing**
+Older CPUs have limited LibreHardwareMonitor support. See
+`%APPDATA%\SystemFlow Pro\logs\app-*.log` for details.
+
+**The app freezes or is slow**
+Increase the polling interval in Settings (⚙ in the header) to 5 seconds. Please
+send the log file to a [GitHub Issue](https://github.com/screamm/SystemFlow_Pro/issues)
+if the problem persists.
 
 ---
 
-## Bidrag & feedback
+## Privacy
 
-- Buggar, feature requests: [GitHub Issues](https://github.com/screamm/SystemFlow_Pro/issues)
-- Diskussion: [GitHub Discussions](https://github.com/screamm/SystemFlow_Pro/discussions)
-- Pull requests välkomnas — se `docs/ARCHITECTURE.md` innan större ändringar
+SystemFlow Pro does not collect or send any personal data. The only
+network call at startup is a version check against the GitHub Releases API.
+See [`PRIVACY.md`](PRIVACY.md) for details.
 
 ---
 
-## Licens
+## Contributing & feedback
 
-MIT License — se [`LICENSE`](LICENSE).
+- Bugs, feature requests: [GitHub Issues](https://github.com/screamm/SystemFlow_Pro/issues)
+- Discussion: [GitHub Discussions](https://github.com/screamm/SystemFlow_Pro/discussions)
+- Pull requests welcome — see `docs/ARCHITECTURE.md` before major changes
 
-Tredjepartsbibliotek (särskilt LibreHardwareMonitor MPL 2.0) listas i
+---
+
+## License
+
+MIT License — see [`LICENSE`](LICENSE).
+
+Third-party libraries (in particular LibreHardwareMonitor MPL 2.0) are listed in
 [`THIRD_PARTY_LICENSES.txt`](THIRD_PARTY_LICENSES.txt).
 
 ---
 
-**Utvecklad av David Rydgren · [@screamm](https://github.com/screamm)**
+**Developed by David Rydgren · [@screamm](https://github.com/screamm)**

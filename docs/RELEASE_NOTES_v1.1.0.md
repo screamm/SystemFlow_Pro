@@ -1,129 +1,129 @@
 # SystemFlow Pro v1.1.0 — Release Notes (template)
 
-**Release date:** TBD (efter Sprint 6 godkänd QA)
+**Release date:** TBD (after Sprint 6 QA approval)
 **Download:** https://github.com/screamm/SystemFlow_Pro/releases/tag/v1.1.0
 
-Första produktionsmognad sedan v1.0.x-serien. Komplett omskrivning av
-hårdvarulagret, ny UI-stack, ~3x bättre prestanda, tillgänglig för
-skärmläsare, portabel öppen-källkod-distribution.
+First production-grade release since the v1.0.x series. Complete rewrite of
+the hardware layer, new UI stack, ~3x better performance, accessible to
+screen readers, portable open source distribution.
 
 ---
 
-## Ladda ner
+## Download
 
-**Rekommenderat:** `SystemFlow-Pro-v1.1.0-win-x64.zip` (~80 MB)
+**Recommended:** `SystemFlow-Pro-v1.1.0-win-x64.zip` (~80 MB)
 
-Packa upp, kör `SystemFlow-Pro.exe`. Ingen .NET installation behövs.
-Ingen admin krävs.
+Extract, run `SystemFlow-Pro.exe`. No .NET installation required.
+No admin required.
 
-## Höjdpunkter
+## Highlights
 
-### Prestanda
+### Performance
 
-- **~3x snabbare tick-cykel.** UI-tråden frikopplad från hårdvaruläsning.
-  Hela snapshot-hämtningen (LibreHardwareMonitor + WMI + Performance Counters)
-  körs nu på en bakgrundstråd via en semaphore-gated pipeline.
-- **Inget mer flimmer.** UI-paneler byggs **en gång** vid start; snapshots
-  uppdaterar bara text/färg. Tidigare revs hela träd varje sekund.
-- **~3% kontinuerlig CPU-overhead** (tidigare 8-15%) på moderna maskiner.
-- **Paus vid minimerad.** När appen minimeras stoppas polling helt. CPU
-  faller till ~0%. Återaktivering vid restore.
+- **~3x faster tick cycle.** The UI thread is decoupled from hardware reading.
+  The entire snapshot collection (LibreHardwareMonitor + WMI + Performance Counters)
+  now runs on a background thread via a semaphore-gated pipeline.
+- **No more flicker.** UI panels are built **once** at startup; snapshots
+  only update text/color. Previously the entire tree was rebuilt every second.
+- **~3% continuous CPU overhead** (previously 8-15%) on modern machines.
+- **Pause on minimize.** When the app is minimized, polling stops entirely. CPU
+  drops to ~0%. Resumes on restore.
 
-### Stabilitet
+### Stability
 
-- **Inga fler tysta krascher.** Global `DispatcherUnhandledException`-handler
-  fångar alla oupptagna exceptions, loggar stack trace till
-  `%APPDATA%\SystemFlow Pro\logs\` och visar vänligt felmeddelande.
-- **Race-condition-fix.** LibreHardwareMonitor är inte trådsäker — all
-  åtkomst serialiseras nu via `_computerLock`. Tidigare versioner racade
-  `Accept()`-anrop från flera trådar, vilket kunde ge korrupta sensor-värden.
-- **Tick-pile-up skyddad.** Om en tick tar längre tid än intervall skippas
-  nästa istället för att köa upp.
-- **Dispose-race skyddad.** Stängning väntar på pågående tick (upp till 2s)
-  innan resurser släpps.
+- **No more silent crashes.** A global `DispatcherUnhandledException` handler
+  catches all unhandled exceptions, logs the stack trace to
+  `%APPDATA%\SystemFlow Pro\logs\`, and shows a friendly error message.
+- **Race condition fix.** LibreHardwareMonitor is not thread-safe — all
+  access is now serialized via `_computerLock`. Previous versions raced
+  `Accept()` calls from multiple threads, which could produce corrupt sensor values.
+- **Tick pile-up protected.** If a tick takes longer than the interval, the
+  next one is skipped instead of being queued up.
+- **Dispose race protected.** Shutdown waits for the running tick (up to 2s)
+  before releasing resources.
 
 ### UI / UX
 
-- **Aero Snap fungerar igen.** WindowChrome-API ersatte den tidigare
-  `AllowsTransparency="True"`-implementation som bröt Snap Layouts,
-  maximize-dubbelklick och Windows-native dragbeteende.
-- **Fluent Icons.** Alla multicolored emoji-ikoner ersatta med
-  Segoe Fluent Icons (med MDL2 Assets-fallback för Windows 10). Mer
-  professionellt, konsekvent per Windows-version, skalar korrekt i DPI.
-- **Settings-dialog.** Konfigurerbar pollingintervall (500ms-5s),
-  temperaturenhet (°C/°F), pausa-vid-minimering, starta-minimerad.
-  Ändringar sparas i `%APPDATA%\SystemFlow Pro\settings.json`.
-- **About-dialog.** Version, byggdatum, länk till GitHub-repo och issues,
-  tredjepart-attribution.
+- **Aero Snap works again.** The WindowChrome API replaced the previous
+  `AllowsTransparency="True"` implementation that broke Snap Layouts,
+  maximize double-click, and Windows native drag behavior.
+- **Fluent Icons.** All multicolored emoji icons have been replaced with
+  Segoe Fluent Icons (with MDL2 Assets fallback for Windows 10). More
+  professional, consistent per Windows version, scales correctly at different DPI.
+- **Settings dialog.** Configurable polling interval (500ms-5s),
+  temperature unit (°C/°F), pause-on-minimize, start-minimized.
+  Changes are saved to `%APPDATA%\SystemFlow Pro\settings.json`.
+- **About dialog.** Version, build date, link to the GitHub repo and issues,
+  third-party attribution.
 - **Accessibility.** `AutomationProperties.Name` + `AutomationProperties.HelpText`
-  på alla interaktiva kontroller. Narrator-stöd. TabIndex för logisk
-  tangentbordsnavigation. Synlig fokus-outline.
-- **WCAG-kontrast höjd** från 4.9:1 till 5.5:1 på muted-text (godkänd AA).
-- **Mindre fönsterdimensioner.** 1400×900 default (MinWidth 1100,
-  MinHeight 750) — ryms nu på 1366×768.
+  on all interactive controls. Narrator support. TabIndex for logical
+  keyboard navigation. Visible focus outline.
+- **WCAG contrast raised** from 4.9:1 to 5.5:1 on muted text (passes AA).
+- **Smaller window dimensions.** 1400×900 default (MinWidth 1100,
+  MinHeight 750) — now fits on 1366×768.
 
-### Arkitektur (under huven)
+### Architecture (under the hood)
 
-- **Extraherad HardwareService** — hårdvaruläsning isolerad från View-lager.
-- **MVVM-lite** med MainViewModel som orkestrerar tick-loop och exponerar
-  snapshot-property via `INotifyPropertyChanged`.
-- **Immutable records** (`SystemSnapshot`, `CpuCoreInfo`, `FanReading`) för
-  trådgräns-säker data-överföring.
-- **37 enhetstester** (xUnit + FluentAssertions) i `Tests/SystemFlow.Tests/`.
+- **Extracted HardwareService** — hardware reading isolated from the View layer.
+- **MVVM-lite** with MainViewModel orchestrating the tick loop and exposing
+  a snapshot property via `INotifyPropertyChanged`.
+- **Immutable records** (`SystemSnapshot`, `CpuCoreInfo`, `FanReading`) for
+  thread-boundary-safe data transfer.
+- **37 unit tests** (xUnit + FluentAssertions) in `Tests/SystemFlow.Tests/`.
 
-### Infrastruktur
+### Infrastructure
 
-- **Self-contained single-file distribution.** Ingen .NET-runtime behövs
-  hos slutanvändare.
-- **GitHub Actions CI/CD.** Automatisk build + test vid varje push.
-  Release-workflow bygger och publicerar zip vid tag-push.
-- **Auto-update-check** mot GitHub Releases API vid appstart (icke-blockerande).
-- **LICENSE, PRIVACY, THIRD_PARTY_LICENSES** komplett dokumenterade.
+- **Self-contained single-file distribution.** No .NET runtime required on
+  end-user machines.
+- **GitHub Actions CI/CD.** Automatic build + test on every push.
+  The release workflow builds and publishes a zip on tag push.
+- **Auto update check** against the GitHub Releases API at app startup (non-blocking).
+- **LICENSE, PRIVACY, THIRD_PARTY_LICENSES** fully documented.
 
-### Administratör inte längre nödvändig
+### Administrator no longer required
 
-Tidigare krävde `app.manifest` `requireAdministrator` även för vanliga
-användare — bröt för icke-admin-konton. Nu körs appen som `asInvoker`
-med graceful degradation för sensorer som kräver admin.
+Previously, `app.manifest` required `requireAdministrator` even for regular
+users — which broke for non-admin accounts. Now the app runs as `asInvoker`
+with graceful degradation for sensors that require admin.
 
-## Ändringar som kan påverka dig
+## Breaking changes
 
-- **Fläktvärden mer korrekta.** Tidigare multiplicerade `value * 30f` för
-  alla värden ≤100, vilket gav falska RPM-värden för zero-RPM GPU:er och
-  pumpsensorer. Nu visas `SensorType.Fan` som RPM och `SensorType.Control`
-  som %. Om du har sparat skärmdumpar för jämförelse kan värden se
-  annorlunda ut — de nya är korrekta.
-- **Ikoner ändrade.** Multicolored emoji (🔥 🎮 💾 🌡️) ersatta med Fluent
-  Icons. Status markeras nu via färgkodning istället för emoji i text.
-- **Settings flyttat.** Ingen tidigare settings-plats — nu
-  `%APPDATA%\SystemFlow Pro\settings.json`. Första körning skapar defaults.
-- **Loggar.** Nya loggar i `%APPDATA%\SystemFlow Pro\logs\` med 5 MB
-  rotation, senaste 5 filer.
+- **Fan values more accurate.** Previously, `value * 30f` was multiplied for
+  all values ≤100, which produced false RPM values for zero-RPM GPUs and
+  pump sensors. Now `SensorType.Fan` is shown as RPM and `SensorType.Control`
+  as %. If you have saved screenshots for comparison, values may look
+  different — the new ones are correct.
+- **Icons changed.** Multicolored emoji (fire, gamepad, disk, thermometer) have been replaced with Fluent
+  Icons. Status is now indicated via color coding instead of emoji in text.
+- **Settings moved.** No previous settings location — now
+  `%APPDATA%\SystemFlow Pro\settings.json`. First run creates defaults.
+- **Logs.** New logs in `%APPDATA%\SystemFlow Pro\logs\` with 5 MB
+  rotation, latest 5 files retained.
 
-## Migrering från v1.0.x
+## Migration from v1.0.x
 
-- Ingen migrering av data behövs — appen läser bara sensorer live
-- Gamla version kan avinstalleras genom att radera mappen
-- Nya versionen är portabel — packa upp .zip vart du vill
+- No data migration needed — the app only reads sensors live
+- The old version can be uninstalled by deleting the folder
+- The new version is portable — extract the .zip wherever you like
 
-## Kända begränsningar
+## Known limitations
 
-- **°F-konvertering**: Settings har °C/°F-valet men konvertering i UI
-  slutförs i v1.1.1.
-- **Mica-backdrop (Windows 11)**: Fluent-acrylic bakgrund implementeras i
+- **°F conversion**: Settings includes the °C/°F choice but conversion in the UI
+  will be completed in v1.1.1.
+- **Mica backdrop (Windows 11)**: Fluent acrylic background is being implemented in
   v1.2.
-- **Auto-update nedladdning**: v1.1.0 visar bara "ny version tillgänglig"
-  med länk. Automatisk nedladdning via Squirrel/Velopack kommer i v1.2.
-- **Språk**: Endast svenska UI. Engelska kommer i v1.2.
+- **Auto-update download**: v1.1.0 only shows "new version available"
+  with a link. Automatic download via Squirrel/Velopack is coming in v1.2.
+- **Languages**: Swedish UI only. English is coming in v1.2.
 
-## Bidragande
+## Contributors
 
-- David Rydgren — utveckling
-- *(Beta-testare — fyll i efter Sprint 6)*
+- David Rydgren — development
+- *(Beta testers — fill in after Sprint 6)*
 
-Tack till alla som rapporterar buggar och föreslår förbättringar på GitHub.
+Thanks to everyone who reports bugs and suggests improvements on GitHub.
 
-## Nästa version
+## Next version
 
-v1.1.1 (bugfix release) eller v1.2.0 (features) — se
-[Issues](https://github.com/screamm/SystemFlow_Pro/issues) för backlog.
+v1.1.1 (bugfix release) or v1.2.0 (features) — see
+[Issues](https://github.com/screamm/SystemFlow_Pro/issues) for the backlog.

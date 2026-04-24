@@ -394,7 +394,7 @@ namespace SystemMonitorApp.Services
                     result.Add(new CoolingReadout(ShortName(kvp.Key), v, sev));
                 }
 
-                // 1b. Fallback: Win32_Fan via WMI (sällsynt populerat på desktop men värt ett försök)
+                // 1b. Fallback: Win32_Fan via WMI (rarely populated on desktop but worth a try)
                 if (fanSensorsFromLhm == 0)
                 {
                     foreach (var (name, rpm) in ReadWin32Fans())
@@ -582,7 +582,7 @@ namespace SystemMonitorApp.Services
         {
             try
             {
-                if (_computer == null) return "GPU-information ej tillgänglig";
+                if (_computer == null) return "GPU information not available";
                 var sb = new StringBuilder("GPU Information:\n");
                 bool found = false;
 
@@ -606,9 +606,9 @@ namespace SystemMonitorApp.Services
 
                 return found
                     ? sb.ToString()
-                    : "Ingen GPU detekterad\n\nMöjliga orsaker:\n• LibreHardwareMonitor stöder ej GPU\n• Administratörsbehörighet krävs\n• GPU-drivrutiner saknas";
+                    : "No GPU detected\n\nPossible causes:\n• LibreHardwareMonitor does not support GPU\n• Administrator privileges required\n• GPU drivers missing";
             }
-            catch (Exception ex) { Logger.Warn("BuildGpuInfoText failed", ex); return "GPU-information ej tillgänglig"; }
+            catch (Exception ex) { Logger.Warn("BuildGpuInfoText failed", ex); return "GPU information not available"; }
         }
 
         private static string BuildHardwareInfoText()
@@ -635,7 +635,7 @@ namespace SystemMonitorApp.Services
                 info.AppendLine($"User: {Environment.UserName}");
                 return info.ToString();
             }
-            catch (Exception ex) { Logger.Warn("BuildHardwareInfoText failed", ex); return "Hårdvaruinformation ej tillgänglig"; }
+            catch (Exception ex) { Logger.Warn("BuildHardwareInfoText failed", ex); return "Hardware information not available"; }
         }
 
         private static bool IsGpu(HardwareType type) =>
