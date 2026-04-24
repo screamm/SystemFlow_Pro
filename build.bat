@@ -1,7 +1,7 @@
 @echo off
 setlocal enabledelayedexpansion
 
-REM SystemFlow Pro — unified build script.
+REM SystemFlow Pro ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â unified build script.
 REM Replaces build_release_v1.0.2.bat .. build_release_v1.0.8.bat.
 REM
 REM Usage: build.bat [version] [--no-compress]
@@ -11,7 +11,7 @@ REM   build.bat 1.1.0                Build release zip
 REM   build.bat 1.1.0 --no-compress  Build, keep uncompressed folder only
 REM
 REM Requires: .NET 9 SDK (pinned via global.json).
-REM Note: builds are unsigned — SystemFlow Pro is distributed as portable
+REM Note: builds are unsigned ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â SystemFlow Pro is distributed as portable
 REM open source. End users may see a SmartScreen warning on first run
 REM (documented in README and FAQ).
 
@@ -42,11 +42,15 @@ echo ============================================================
 echo.
 
 echo [1/5] Cleaning previous build...
-dotnet clean -c Release --nologo --verbosity quiet
+dotnet clean SystemMonitorApp.csproj -c Release --nologo --verbosity quiet
 if errorlevel 1 (
     echo ERROR: Clean failed.
     exit /b 1
 )
+
+REM Split semver into numeric core (Major.Minor.Patch) and full (with -suffix).
+REM AssemblyVersion/FileVersion accept only numeric 4-part values.
+for /f "tokens=1 delims=-" %%A in ("%VERSION%") do set VERSION_CORE=%%A
 
 echo [2/5] Publishing self-contained single-file...
 dotnet publish SystemMonitorApp.csproj ^
@@ -54,8 +58,9 @@ dotnet publish SystemMonitorApp.csproj ^
     -r win-x64 ^
     --self-contained true ^
     -p:Version=%VERSION% ^
-    -p:AssemblyVersion=%VERSION%.0 ^
-    -p:FileVersion=%VERSION%.0 ^
+    -p:AssemblyVersion=%VERSION_CORE%.0 ^
+    -p:FileVersion=%VERSION_CORE%.0 ^
+    -p:InformationalVersion=%VERSION% ^
     -p:PublishSingleFile=true ^
     -p:IncludeNativeLibrariesForSelfExtract=true ^
     -p:EnableCompressionInSingleFile=true ^
