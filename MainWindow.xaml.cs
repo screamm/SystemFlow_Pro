@@ -316,11 +316,29 @@ namespace SystemMonitorApp
 
         private void EnsureFanEmptyPlaceholders()
         {
+            string reportHint = HardwareDiagnostics.LastReportPath != null
+                ? $"\n\nDiagnostikrapport: {HardwareDiagnostics.LastReportPath}"
+                : "";
+
             if (CpuFansPanel.Children.Count == 0)
             {
                 CpuFansPanel.Children.Add(new TextBlock
                 {
-                    Text = "Inga CPU/system-fläktar detekterade\n\nTroliga orsaker:\n• Moderkortet exponerar inte RPM-data via WMI/LHM\n• Fläktar anslutna direkt till PSU\n• Äldre hårdvara saknar sensor-stöd",
+                    Text = "Inga CPU/system-fläktar detekterade\n\n" +
+                           "Moderkortets SuperIO-chip (ITE / Nuvoton) läses normalt för\n" +
+                           "fläktdata, men kan blockeras av:\n" +
+                           "• Windows 11 Insider / 25H2 begränsar port-I/O till LPC-bussen\n" +
+                           "• Moderkortet finns i LHM:s databas men SuperIO-chipet är inte\n" +
+                           "  mappat för just din variant/revision\n" +
+                           "• Annat program (AORUS Engine, ASUS AI Suite, Armoury Crate)\n" +
+                           "  har exklusiv åtkomst till SuperIO\n" +
+                           "• Fläktar är direkt anslutna till PSU utan RPM-pinne\n\n" +
+                           "Felsökning:\n" +
+                           "1. Kör HWiNFO64 — om inte heller det hittar fläktarna är det\n" +
+                           "   en Windows- eller BIOS-begränsning\n" +
+                           "2. Stäng andra hårdvaruappar och starta om\n" +
+                           "3. Uppdatera BIOS" +
+                           reportHint,
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap
@@ -331,7 +349,11 @@ namespace SystemMonitorApp
             {
                 SystemFansPanel.Children.Add(new TextBlock
                 {
-                    Text = "Inga GPU-fläktar detekterade\n\nDetta är normalt på äldre system:\n• GPU-fläktar ej exponerade av drivrutin\n• Zero RPM Mode vid låga temperaturer\n• Passiv kylning",
+                    Text = "Inga GPU-fläktar detekterade\n\n" +
+                           "Vanligt på moderna GPU:er:\n" +
+                           "• Zero RPM Mode — fläktarna stoppas under ~55°C\n" +
+                           "• Hybrid-grafik där dGPU är avstängd\n" +
+                           "• Drivrutinen exponerar inte load-sensor",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap

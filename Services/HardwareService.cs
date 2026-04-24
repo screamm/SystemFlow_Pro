@@ -53,6 +53,16 @@ namespace SystemMonitorApp.Services
                 InitializeCounters();
                 TotalMemoryGB = ReadTotalMemoryGB();
                 HardwareInfoText = BuildHardwareInfoText();
+
+                // Dump full hardware tree for diagnostics — critical for troubleshooting
+                // missing fan/motherboard sensors on unsupported boards.
+                if (_computer != null)
+                {
+                    lock (_computerLock)
+                    {
+                        HardwareDiagnostics.DumpReport(_computer);
+                    }
+                }
             }, ct);
 
             IsInitialized = true;
