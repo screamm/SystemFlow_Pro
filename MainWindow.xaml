@@ -481,8 +481,8 @@
                         <StackPanel x:Name="CpuCoresPanel" Margin="0,0,0,12"/>
                     </ScrollViewer>
 
-                    <TextBlock Text="CPU FLÄKTAR" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
-                    <ScrollViewer MaxHeight="180" VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="CPU KYLNING" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
+                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="CpuFansPanel"/>
                     </ScrollViewer>
                 </StackPanel>
@@ -496,8 +496,8 @@
                         <StackPanel x:Name="GpuInfoPanel" Margin="0,0,0,12"/>
                     </ScrollViewer>
 
-                    <TextBlock Text="GPU-FLÄKTAR" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
-                    <ScrollViewer MaxHeight="220" VerticalScrollBarVisibility="Auto">
+                    <TextBlock Text="GPU KYLNING" Style="{StaticResource SectionHeader}" Margin="0,16,0,0"/>
+                    <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="SystemFansPanel"/>
                     </ScrollViewer>
                 </StackPanel>

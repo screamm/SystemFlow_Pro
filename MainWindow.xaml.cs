@@ -92,7 +92,8 @@ namespace SystemMonitorApp
                 UpdateMemoryPanel(snapshot);
                 UpdateGpuInfoPanel(snapshot.GpuInfoText);
                 UpdateThermalPanel(snapshot.Thermals);
-                UpdateFanPanels(snapshot.Fans);
+                UpdateCpuCoolingPanel(snapshot.CpuCooling);
+                UpdateGpuCoolingPanel(snapshot.GpuCooling);
                 UpdateSystemPanel(snapshot);
             }
             catch (Exception ex)
@@ -227,6 +228,68 @@ namespace SystemMonitorApp
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
                 });
             }
+        }
+
+        // Render the CPU cooling panel. Uses CoolingReadout entries which work on
+        // every Windows 11 system because they come from CPU MSR + NVIDIA driver API,
+        // not motherboard SuperIO (which may be blocked by Windows security or other apps).
+        private void UpdateCpuCoolingPanel(IReadOnlyList<CoolingReadout> readouts)
+        {
+            CpuFansPanel.Children.Clear();
+            if (readouts.Count == 0)
+            {
+                CpuFansPanel.Children.Add(new TextBlock
+                {
+                    Text = "Väntar på CPU-sensorer...",
+                    Style = (Style)FindResource("DataText"),
+                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
+                });
+                return;
+            }
+            foreach (var r in readouts)
+                CpuFansPanel.Children.Add(BuildCoolingRow(r));
+        }
+
+        private void UpdateGpuCoolingPanel(IReadOnlyList<CoolingReadout> readouts)
+        {
+            SystemFansPanel.Children.Clear();
+            if (readouts.Count == 0)
+            {
+                SystemFansPanel.Children.Add(new TextBlock
+                {
+                    Text = "Ingen GPU-sensor tillgänglig",
+                    Style = (Style)FindResource("DataText"),
+                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
+                });
+                return;
+            }
+            foreach (var r in readouts)
+                SystemFansPanel.Children.Add(BuildCoolingRow(r));
+        }
+
+        private TextBlock BuildCoolingRow(CoolingReadout readout)
+        {
+            SolidColorBrush brush = readout.Severity switch
+            {
+                CoolingSeverity.Critical => (SolidColorBrush)FindResource("ErrorBrush"),
+                CoolingSeverity.Warning => (SolidColorBrush)FindResource("WarnBrush"),
+                CoolingSeverity.Healthy => (SolidColorBrush)FindResource("AccentBrush"),
+                CoolingSeverity.Idle => (SolidColorBrush)FindResource("TextMutedBrush"),
+                _ => (SolidColorBrush)FindResource("TextSecondaryBrush")
+            };
+
+            string label = readout.Label.Length > 26
+                ? readout.Label.Substring(0, 23) + "..."
+                : readout.Label;
+
+            return new TextBlock
+            {
+                Text = $"{label}: {readout.DisplayValue}",
+                Style = (Style)FindResource("DataText"),
+                Foreground = brush,
+                Margin = new Thickness(0, 2, 0, 0),
+                TextWrapping = TextWrapping.NoWrap
+            };
         }
 
         private void UpdateFanPanels(IReadOnlyDictionary<string, FanReading> fans)

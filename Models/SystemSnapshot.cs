@@ -34,6 +34,17 @@ namespace SystemMonitorApp.Models
         public IReadOnlyDictionary<string, FanReading> Fans { get; init; }
             = new Dictionary<string, FanReading>();
 
+        /// <summary>
+        /// Cooling/thermal readouts grouped for the CPU panel. Includes Fan sensors
+        /// (when motherboard exposes them), CPU package temperature, per-core temps,
+        /// package power and voltage — whatever is available via CPU MSR. Designed to
+        /// always surface meaningful data even when SuperIO fans cannot be read.
+        /// </summary>
+        public IReadOnlyList<CoolingReadout> CpuCooling { get; init; } = Array.Empty<CoolingReadout>();
+
+        /// <summary>GPU thermal readouts: fan RPM/percent, temperature, memory temp, power.</summary>
+        public IReadOnlyList<CoolingReadout> GpuCooling { get; init; } = Array.Empty<CoolingReadout>();
+
         public string HardwareInfoText { get; init; } = "";
 
         /// <summary>Derived status: "OPTIMAL" | "MEDIUMBELASTNING" | "HÖG BELASTNING".</summary>
@@ -48,4 +59,27 @@ namespace SystemMonitorApp.Models
     /// that v1.0.8.1 used is replaced by storing both flavors discriminated by SensorType.
     /// </summary>
     public readonly record struct FanReading(float RawValue, bool IsPercent, bool IsGpu);
+
+    /// <summary>
+    /// A single cooling/thermal readout — fan, temp, power, voltage.
+    /// Rendered as "Label: Value Unit" in the UI with color-coded severity.
+    /// </summary>
+    public sealed record CoolingReadout(
+        string Label,
+        string DisplayValue,
+        CoolingSeverity Severity = CoolingSeverity.Info);
+
+    public enum CoolingSeverity
+    {
+        /// <summary>Neutral informational value (default).</summary>
+        Info,
+        /// <summary>Value is healthy/good (green).</summary>
+        Healthy,
+        /// <summary>Elevated but acceptable (yellow).</summary>
+        Warning,
+        /// <summary>Critical — user attention needed (red).</summary>
+        Critical,
+        /// <summary>Passive/idle state — not alarming (muted).</summary>
+        Idle
+    }
 }

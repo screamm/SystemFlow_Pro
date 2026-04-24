@@ -145,6 +145,8 @@ namespace SystemMonitorApp.Services
                 float avgTemp = ReadAverageTemperature();
                 var thermals = ReadThermalData();
                 var fans = ReadFanData();
+                var cpuCooling = ReadCpuCooling();
+                var gpuCooling = ReadGpuCooling();
                 string gpuInfoText = BuildGpuInfoText();
 
                 string status = SystemStatusEvaluator.Evaluate(cpuUsage, memPercent, avgTemp);
@@ -163,6 +165,8 @@ namespace SystemMonitorApp.Services
                     AverageTemperatureC = avgTemp,
                     Thermals = thermals,
                     Fans = fans,
+                    CpuCooling = cpuCooling,
+                    GpuCooling = gpuCooling,
                     HardwareInfoText = HardwareInfoText,
                     SystemStatus = status
                 };
@@ -355,6 +359,179 @@ namespace SystemMonitorApp.Services
                 result[displayName] = new FanReading(sensor.Value.Value, IsPercent: false, IsGpu: isGpu);
             }
         }
+
+        /// <summary>
+        /// Builds the CPU cooling panel data — always returns something meaningful
+        /// even when motherboard SuperIO fans are unavailable. Pulls from:
+        /// - Motherboard Fan/Control sensors (when LHM exposes them)
+        /// - CPU hardware: Package temp, Package power, Core voltage, Per-core temps
+        /// - CPU MSR data works on every modern AMD/Intel CPU regardless of motherboard.
+        /// </summary>
+        private List<CoolingReadout> ReadCpuCooling()
+        {
+            var result = new List<CoolingReadout>();
+            if (_computer == null) return result;
+
+            try
+            {
+                // 1. Motherboard fans (if any). Exclude GPU-routed ones.
+                foreach (var kvp in ReadFanData())
+                {
+                    bool isGpuRouted = kvp.Value.IsGpu
+                        || kvp.Key.Contains("gpu", StringComparison.OrdinalIgnoreCase)
+                        || kvp.Key.Contains("nvidia", StringComparison.OrdinalIgnoreCase)
+                        || kvp.Key.Contains("radeon", StringComparison.OrdinalIgnoreCase)
+                        || kvp.Key.Contains("geforce", StringComparison.OrdinalIgnoreCase);
+                    if (isGpuRouted) continue;
+
+                    string unit = kvp.Value.IsPercent ? "%" : "RPM";
+                    string v = $"{kvp.Value.RawValue:F0} {unit}";
+                    CoolingSeverity sev = kvp.Value.RawValue <= 0
+                        ? CoolingSeverity.Idle
+                        : CoolingSeverity.Healthy;
+                    result.Add(new CoolingReadout(ShortName(kvp.Key), v, sev));
+                }
+
+                // 2. CPU hardware data — always available via MSR on modern CPUs
+                foreach (var hw in _computer.Hardware)
+                {
+                    if (hw.HardwareType != HardwareType.Cpu) continue;
+
+                    // Package temperature
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Temperature || !sensor.Value.HasValue) continue;
+                        float v = sensor.Value.Value;
+                        if (v <= 0 || v > 150) continue;
+
+                        string label = sensor.Name
+                            .Replace("Core (Tctl/Tdie)", "CPU Package (Tctl)")
+                            .Replace("CPU Package", "CPU Package");
+                        var sev = v > 85 ? CoolingSeverity.Critical
+                               : v > 70 ? CoolingSeverity.Warning
+                               : CoolingSeverity.Healthy;
+                        result.Add(new CoolingReadout(label, $"{v:F0} °C", sev));
+                    }
+
+                    // Package power
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue) continue;
+                        if (!sensor.Name.Contains("Package", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (sensor.Value.Value <= 0) continue;
+                        result.Add(new CoolingReadout(
+                            "CPU Package Power", $"{sensor.Value.Value:F1} W", CoolingSeverity.Info));
+                    }
+
+                    // Total CPU load
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Load || !sensor.Value.HasValue) continue;
+                        if (sensor.Name != "CPU Total") continue;
+                        float v = sensor.Value.Value;
+                        var sev = v > 90 ? CoolingSeverity.Warning
+                               : v > 70 ? CoolingSeverity.Info
+                               : CoolingSeverity.Healthy;
+                        result.Add(new CoolingReadout("CPU Load", $"{v:F0} %", sev));
+                    }
+
+                    // SoC voltage (AMD) — relevant for thermal stability
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Voltage || !sensor.Value.HasValue) continue;
+                        if (!sensor.Name.Contains("SoC", StringComparison.OrdinalIgnoreCase)) continue;
+                        if (sensor.Value.Value <= 0) continue;
+                        result.Add(new CoolingReadout(
+                            "SoC Voltage", $"{sensor.Value.Value:F2} V", CoolingSeverity.Info));
+                    }
+                }
+            }
+            catch (Exception ex) { Logger.Warn("ReadCpuCooling failed", ex); }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Builds GPU cooling panel data — fans, temps, power. Uses NVIDIA/AMD driver
+        /// API via LHM which works on virtually all systems with proper GPU drivers.
+        /// </summary>
+        private List<CoolingReadout> ReadGpuCooling()
+        {
+            var result = new List<CoolingReadout>();
+            if (_computer == null) return result;
+
+            try
+            {
+                foreach (var hw in _computer.Hardware)
+                {
+                    if (!IsGpu(hw.HardwareType)) continue;
+
+                    // Fan sensors
+                    int fanIndex = 0;
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (!sensor.Value.HasValue) continue;
+                        if (sensor.SensorType == SensorType.Fan)
+                        {
+                            fanIndex++;
+                            float v = sensor.Value.Value;
+                            var sev = v <= 0 ? CoolingSeverity.Idle : CoolingSeverity.Healthy;
+                            string label = fanIndex == 1 ? "GPU Fan" : $"GPU Fan {fanIndex}";
+                            string display = v <= 0 ? "0 RPM (Zero-RPM)" : $"{v:F0} RPM";
+                            result.Add(new CoolingReadout(label, display, sev));
+                        }
+                    }
+
+                    // Control (PWM) for GPU fans
+                    int controlIndex = 0;
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (!sensor.Value.HasValue) continue;
+                        if (sensor.SensorType == SensorType.Control
+                            && sensor.Name.Contains("Fan", StringComparison.OrdinalIgnoreCase))
+                        {
+                            controlIndex++;
+                            float v = sensor.Value.Value;
+                            var sev = v >= 70 ? CoolingSeverity.Warning
+                                   : v > 0 ? CoolingSeverity.Healthy
+                                   : CoolingSeverity.Idle;
+                            string label = controlIndex == 1 ? "GPU PWM" : $"GPU PWM {controlIndex}";
+                            result.Add(new CoolingReadout(label, $"{v:F0} %", sev));
+                        }
+                    }
+
+                    // Temperatures
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Temperature || !sensor.Value.HasValue) continue;
+                        float v = sensor.Value.Value;
+                        if (v <= 0 || v > 150) continue;
+
+                        string label = sensor.Name
+                            .Replace("GPU ", "GPU ");
+                        var sev = v > 85 ? CoolingSeverity.Critical
+                               : v > 70 ? CoolingSeverity.Warning
+                               : CoolingSeverity.Healthy;
+                        result.Add(new CoolingReadout(label, $"{v:F0} °C", sev));
+                    }
+
+                    // Power
+                    foreach (var sensor in hw.Sensors)
+                    {
+                        if (sensor.SensorType != SensorType.Power || !sensor.Value.HasValue) continue;
+                        if (sensor.Value.Value <= 0) continue;
+                        result.Add(new CoolingReadout(
+                            sensor.Name, $"{sensor.Value.Value:F1} W", CoolingSeverity.Info));
+                    }
+                }
+            }
+            catch (Exception ex) { Logger.Warn("ReadGpuCooling failed", ex); }
+
+            return result;
+        }
+
+        private static string ShortName(string name)
+            => name.Length > 28 ? name.Substring(0, 25) + "..." : name;
 
         private string BuildGpuInfoText()
         {
