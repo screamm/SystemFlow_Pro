@@ -372,6 +372,7 @@ namespace SystemMonitorApp.Services
             var result = new List<CoolingReadout>();
             if (_computer == null) return result;
 
+            int fanSensorsFromLhm = 0;
             try
             {
                 // 1. Motherboard fans (if any). Exclude GPU-routed ones.
@@ -384,12 +385,23 @@ namespace SystemMonitorApp.Services
                         || kvp.Key.Contains("geforce", StringComparison.OrdinalIgnoreCase);
                     if (isGpuRouted) continue;
 
+                    fanSensorsFromLhm++;
                     string unit = kvp.Value.IsPercent ? "%" : "RPM";
                     string v = $"{kvp.Value.RawValue:F0} {unit}";
                     CoolingSeverity sev = kvp.Value.RawValue <= 0
                         ? CoolingSeverity.Idle
                         : CoolingSeverity.Healthy;
                     result.Add(new CoolingReadout(ShortName(kvp.Key), v, sev));
+                }
+
+                // 1b. Fallback: Win32_Fan via WMI (sällsynt populerat på desktop men värt ett försök)
+                if (fanSensorsFromLhm == 0)
+                {
+                    foreach (var (name, rpm) in ReadWin32Fans())
+                    {
+                        result.Add(new CoolingReadout(ShortName(name),
+                            $"{rpm:F0} RPM", CoolingSeverity.Healthy));
+                    }
                 }
 
                 // 2. CPU hardware data — always available via MSR on modern CPUs
@@ -532,6 +544,39 @@ namespace SystemMonitorApp.Services
 
         private static string ShortName(string name)
             => name.Length > 28 ? name.Substring(0, 25) + "..." : name;
+
+        /// <summary>
+        /// Try to read fan RPM from Win32_Fan WMI class. Rarely populated on desktop
+        /// motherboards (most OEMs don't implement the fan provider) but works on
+        /// some OEM systems (Dell, HP) and Gigabyte boards with Gigabyte Control
+        /// Center installed and running (registers acpimof.dll WMI provider).
+        /// Returns sequence of (Name, RPM) tuples.
+        /// </summary>
+        private IEnumerable<(string Name, float Rpm)> ReadWin32Fans()
+        {
+            var results = new List<(string, float)>();
+            try
+            {
+                using var searcher = new ManagementObjectSearcher(
+                    null, "SELECT Name, DeviceID, DesiredSpeed FROM Win32_Fan", _wmiOptions);
+                foreach (ManagementObject fan in searcher.Get())
+                {
+                    try
+                    {
+                        var name = fan["Name"]?.ToString()
+                                   ?? fan["DeviceID"]?.ToString()
+                                   ?? "WMI Fan";
+                        var speedObj = fan["DesiredSpeed"];
+                        if (speedObj == null) continue;
+                        if (ulong.TryParse(speedObj.ToString(), out var rpm) && rpm > 0)
+                            results.Add(($"WMI {name}", rpm));
+                    }
+                    catch (Exception ex) { Logger.Warn("Win32_Fan row parse failed", ex); }
+                }
+            }
+            catch (Exception ex) { Logger.Warn("Win32_Fan query failed", ex); }
+            return results;
+        }
 
         private string BuildGpuInfoText()
         {

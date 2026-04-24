@@ -248,6 +248,30 @@ namespace SystemMonitorApp
             }
             foreach (var r in readouts)
                 CpuFansPanel.Children.Add(BuildCoolingRow(r));
+
+            // If no fan readouts are present among CPU cooling data, show a concise
+            // "why no RPM" note. SuperIO-based RPM reading requires BIOS to hand
+            // over PWM control to the OS (Smart Fan 5 → Full Speed on Gigabyte).
+            bool hasFanRow = false;
+            foreach (var r in readouts)
+            {
+                if (r.DisplayValue.Contains("RPM") || r.DisplayValue.EndsWith("%"))
+                { hasFanRow = true; break; }
+            }
+            if (!hasFanRow)
+            {
+                var hint = new TextBlock
+                {
+                    Style = (Style)FindResource("DataText"),
+                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
+                    TextWrapping = TextWrapping.Wrap,
+                    Margin = new Thickness(0, 12, 0, 0),
+                    Text = "Fläkt-RPM visas inte — moderkortets SuperIO är låst av BIOS.\n" +
+                           "Fix: BIOS → Smart Fan 5 → sätt fläkt-headrar till \"Full Speed\" " +
+                           "eller \"Manual\", spara, starta om. Då kan OS läsa RPM:en."
+                };
+                CpuFansPanel.Children.Add(hint);
+            }
         }
 
         private void UpdateGpuCoolingPanel(IReadOnlyList<CoolingReadout> readouts)
