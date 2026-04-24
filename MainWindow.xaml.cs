@@ -1,1233 +1,434 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Management;
-using System.Security.Principal;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
-using System.Windows.Threading;
-using LibreHardwareMonitor.Hardware;
+using SystemMonitorApp.Models;
+using SystemMonitorApp.Services;
+using SystemMonitorApp.ViewModels;
+using SystemMonitorApp.Views;
 
 namespace SystemMonitorApp
 {
+    /// <summary>
+    /// View layer. All hardware access happens in HardwareService; all state lives in
+    /// MainViewModel. This code-behind renders panels imperatively from snapshots —
+    /// Sprint 4 will replace the imperative panel rendering with XAML binding + ItemsControl.
+    /// </summary>
     public partial class MainWindow : Window
     {
-        private DispatcherTimer _timer;
-        private PerformanceCounter _cpuCounter;
-        private List<PerformanceCounter> _cpuCoreCounters;
-        private PerformanceCounter _gpuCounter;
-        private PerformanceCounter _memoryCounter;
-        private Computer computer;
-        
-        // För animations
-        private float currentCpuUsage = 0f;
-        private float currentGpuUsage = 0f;
-        private float currentMemoryUsage = 0f;
-        private float currentTemperature = 0f;
-        
-        // Enhanced hardware detection tracking
-        private bool _isAdminMode = false;
-        private Dictionary<string, string> _hardwareCapabilities = new Dictionary<string, string>();
-        private Dictionary<string, DateTime> _lastFanDetection = new Dictionary<string, DateTime>();
-        
-        // UI caching to prevent flickering
-        private Dictionary<string, TextBlock> _fanTextBlocks = new Dictionary<string, TextBlock>();
-        private bool _fanPanelsInitialized = false;
+        private MainViewModel? _viewModel;
+        private bool _panelsInitialized;
+
+        // Cached TextBlocks — built once, updated per snapshot to avoid GC pressure.
+        private TextBlock[] _cpuCoreTextBlocks = Array.Empty<TextBlock>();
+        private TextBlock? _memoryInfoText;
+        private TextBlock? _gpuInfoText;
+        private TextBlock? _systemStatusText;
+        private TextBlock? _systemUptimeText;
+        private TextBlock? _hardwareInfoText;
+
+        private readonly Dictionary<string, TextBlock> _thermalTextBlocks = new();
+        private readonly Dictionary<string, TextBlock> _fanTextBlocks = new();
 
         public MainWindow()
         {
             InitializeComponent();
-            
-            InitializeCounters();
-            InitializeTimer();
-            LoadSystemInfo();
         }
 
-        private void Window_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        /// <summary>Called from App.xaml.cs after splash so heavy init runs off the UI thread.</summary>
+        public async Task InitializeAsync()
         {
-            this.DragMove();
+            var hardware = new HardwareService();
+            _viewModel = new MainViewModel(hardware);
+            DataContext = _viewModel;
+
+            InitializePanels(Environment.ProcessorCount, hardware.HardwareInfoText);
+
+            _viewModel.SnapshotChanged += OnSnapshotChanged;
+
+            await _viewModel.StartAsync();
+
+            // Hardware info becomes available after StartAsync — refresh the cached panel text.
+            if (_hardwareInfoText != null)
+                _hardwareInfoText.Text = _viewModel.HardwareInfoText;
+
+            Loaded += OnLoaded;
+            StateChanged += OnWindowStateChanged;
         }
 
-        private void InitializeCounters()
+        private void OnLoaded(object sender, RoutedEventArgs e)
         {
-            // Check if running with admin privileges
-            _isAdminMode = IsRunningAsAdministrator();
-            
+            // Reserved for future Loaded-time work.
+        }
+
+        private void OnWindowStateChanged(object? sender, EventArgs e)
+        {
+            if (_viewModel == null) return;
+            if (!SettingsService.Current.PauseWhenMinimized) return;
+
+            if (WindowState == WindowState.Minimized)
+                _viewModel.PauseTimer();
+            else
+                _viewModel.ResumeTimer();
+        }
+
+        private void OnSnapshotChanged(object? sender, SystemSnapshot snapshot)
+        {
+            if (!_panelsInitialized) return;
             try
             {
-                // CPU Total
-                _cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-                
-                // CPU Cores
-                _cpuCoreCounters = new List<PerformanceCounter>();
-                int coreCount = Environment.ProcessorCount;
-                
-                for (int i = 0; i < coreCount; i++)
-                {
-                    var counter = new PerformanceCounter("Processor", "% Processor Time", i.ToString());
-                    _cpuCoreCounters.Add(counter);
-                }
+                // Hero card values are already bound via DataContext in XAML for simple ones;
+                // since XAML still uses x:Name for these, we set directly. Sprint 4 converts to binding.
+                CpuValueText.Text = _viewModel?.CpuUsageDisplay ?? "";
+                MemoryValueText.Text = _viewModel?.MemoryUsageDisplay ?? "";
+                MemoryProgressBar.Value = snapshot.MemoryUsagePercent;
+                GpuValueText.Text = _viewModel?.GpuUsageDisplay ?? "";
+                TempValueText.Text = _viewModel?.TemperatureDisplay ?? "";
 
-                // Memory
-                _memoryCounter = new PerformanceCounter("Memory", "Available MBytes");
-                
-                // First reading to initialize counters
-                _cpuCounter.NextValue();
-                foreach (var counter in _cpuCoreCounters)
-                {
-                    counter.NextValue();
-                }
-                _memoryCounter.NextValue();
-
-                // Initiera LibreHardwareMonitor - aktivera alla möjliga hårdvarutyper
-                computer = new Computer
-                {
-                    IsCpuEnabled = true,
-                    IsGpuEnabled = true,
-                    IsMemoryEnabled = true,
-                    IsMotherboardEnabled = true,
-                    IsControllerEnabled = true,
-                    IsNetworkEnabled = true,
-                    IsStorageEnabled = true,
-                    IsPsuEnabled = true,
-                    IsBatteryEnabled = true
-                };
-                
-                computer.Open();
-                computer.Accept(new UpdateVisitor());
+                UpdateCpuCoresPanel(snapshot.CpuCores);
+                UpdateMemoryPanel(snapshot);
+                UpdateGpuInfoPanel(snapshot.GpuInfoText);
+                UpdateThermalPanel(snapshot.Thermals);
+                UpdateFanPanels(snapshot.Fans);
+                UpdateSystemPanel(snapshot);
             }
             catch (Exception ex)
             {
-                string adminNote = _isAdminMode ? "" : "\n\nTips: Kör som administratör för bättre hårdvaruåtkomst.";
-                MessageBox.Show($"Kunde inte initiera systemräknare: {ex.Message}{adminNote}", "Fel", MessageBoxButton.OK, MessageBoxImage.Warning);
-            }
-        }
-        
-        private bool IsRunningAsAdministrator()
-        {
-            try
-            {
-                WindowsIdentity identity = WindowsIdentity.GetCurrent();
-                WindowsPrincipal principal = new WindowsPrincipal(identity);
-                return principal.IsInRole(WindowsBuiltInRole.Administrator);
-            }
-            catch
-            {
-                return false;
+                Logger.Warn("MainWindow.OnSnapshotChanged failed", ex);
             }
         }
 
-        private void InitializeTimer()
+        private void InitializePanels(int coreCount, string hardwareInfoText)
         {
-            _timer = new DispatcherTimer();
-            _timer.Interval = TimeSpan.FromSeconds(1);
-            _timer.Tick += Timer_Tick;
-            _timer.Start();
-        }
+            int displayCount = Math.Min(coreCount, 16);
+            _cpuCoreTextBlocks = new TextBlock[displayCount];
 
-        private async void Timer_Tick(object sender, EventArgs e)
-        {
-            await UpdateSystemData();
-        }
-
-        private async Task UpdateSystemData()
-        {
-            try
-            {
-                // Update CPU usage
-                float cpuUsage = _cpuCounter.NextValue();
-                currentCpuUsage = cpuUsage;
-                CpuValueText.Text = $"{cpuUsage:F0}%";
-
-                // Update Memory
-                float availableMemory = _memoryCounter.NextValue();
-                float availableGB = availableMemory / 1024f;
-                
-                // Get total memory for percentage calculation
-                float totalMemoryGB = await GetTotalMemoryGB();
-                float usedMemoryGB = totalMemoryGB - availableGB;
-                float memoryUsagePercent = (usedMemoryGB / totalMemoryGB) * 100f;
-                
-                currentMemoryUsage = memoryUsagePercent;
-                MemoryValueText.Text = $"{memoryUsagePercent:F0}%";
-                MemoryProgressBar.Value = memoryUsagePercent;
-
-                // Update GPU
-                float gpuUsage = await GetGpuUsage();
-                currentGpuUsage = gpuUsage;
-                if (gpuUsage >= 0)
-                {
-                    GpuValueText.Text = $"{gpuUsage:F0}%";
-                }
-                else
-                {
-                    GpuValueText.Text = "N/A";
-                }
-
-                // Update Temperature
-                float avgTemp = await GetAverageTemperature();
-                if (avgTemp > 0)
-                {
-                    currentTemperature = avgTemp;
-                    TempValueText.Text = $"{avgTemp:F0}°C";
-                }
-                else
-                {
-                    TempValueText.Text = "N/A";
-                }
-
-                // Update detailed panels
-                await UpdateDetailedPanels();
-            }
-            catch (Exception ex)
-            {
-                // Silent error handling
-            }
-        }
-
-        private async Task UpdateDetailedPanels()
-        {
-            try
-            {
-                // Update CPU Cores Panel
-                UpdateCpuCoresPanel();
-
-                // Update Memory Panel
-                UpdateMemoryPanel();
-
-                // Update GPU Info Panel
-                await UpdateGpuInfoPanel();
-
-                // Update Thermal Panel
-                await UpdateThermalPanel();
-
-                // Update Fan Panels
-                await UpdateFanPanels();
-
-                // Update System Panel
-                UpdateSystemPanel();
-
-                // Update Hardware Panel
-                UpdateHardwarePanel();
-            }
-            catch (Exception ex)
-            {
-                // Silent error handling
-            }
-        }
-
-        private void UpdateCpuCoresPanel()
-        {
             CpuCoresPanel.Children.Clear();
-            
-            try
+            for (int i = 0; i < displayCount; i++)
             {
-                int coreCount = _cpuCoreCounters.Count;
-                for (int i = 0; i < Math.Min(coreCount, 16); i++)
+                var tb = new TextBlock
                 {
-                    float coreUsage = _cpuCoreCounters[i].NextValue();
-                    
-                    var coreText = new TextBlock
-                    {
-                        Text = $"Core {i}: {coreUsage:F1}%",
-                        Style = (Style)FindResource("DataText"),
-                        Margin = new Thickness(0, 2, 0, 0)
-                    };
-                    
-                    // Color based on usage
-                    if (coreUsage > 80)
-                        coreText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
-                    else if (coreUsage > 60)
-                        coreText.Foreground = (SolidColorBrush)FindResource("WarnBrush");
-                    else
-                        coreText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
-                    
-                    CpuCoresPanel.Children.Add(coreText);
-                }
-            }
-            catch
-            {
-                var errorText = new TextBlock
-                {
-                    Text = "Data ej tillgänglig",
                     Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
+                    Margin = new Thickness(0, 2, 0, 0),
+                    Text = $"Core {i}: 0%"
                 };
-                CpuCoresPanel.Children.Add(errorText);
+                _cpuCoreTextBlocks[i] = tb;
+                CpuCoresPanel.Children.Add(tb);
             }
-        }
 
-        private void UpdateMemoryPanel()
-        {
             MemoryPanel.Children.Clear();
-            
-            try
-            {
-                float availableMemory = _memoryCounter.NextValue();
-                float availableGB = availableMemory / 1024f;
-                float totalMemoryGB = GetTotalMemoryGB().Result;
-                float usedMemoryGB = totalMemoryGB - availableGB;
-                
-                var memoryInfo = new TextBlock
-                {
-                    Text = $"Använt: {usedMemoryGB:F1} GB / {totalMemoryGB:F1} GB\nTillgängligt: {availableGB:F1} GB",
-                    Style = (Style)FindResource("DataText")
-                };
-                
-                MemoryPanel.Children.Add(memoryInfo);
-            }
-            catch
-            {
-                var errorText = new TextBlock
-                {
-                    Text = "Minnesdata ej tillgänglig",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                MemoryPanel.Children.Add(errorText);
-            }
-        }
+            _memoryInfoText = new TextBlock { Style = (Style)FindResource("DataText") };
+            MemoryPanel.Children.Add(_memoryInfoText);
 
-        private async Task UpdateGpuInfoPanel()
-        {
             GpuInfoPanel.Children.Clear();
-            
-            try
+            _gpuInfoText = new TextBlock
             {
-                var gpuInfo = await GetGpuInfo();
-                
-                var gpuText = new TextBlock
-                {
-                    Text = gpuInfo,
-                    Style = (Style)FindResource("DataText"),
-                    TextWrapping = TextWrapping.Wrap
-                };
-                
-                GpuInfoPanel.Children.Add(gpuText);
-            }
-            catch
+                Style = (Style)FindResource("DataText"),
+                TextWrapping = TextWrapping.Wrap
+            };
+            GpuInfoPanel.Children.Add(_gpuInfoText);
+
+            SystemPanel.Children.Clear();
+            _systemStatusText = new TextBlock { Style = (Style)FindResource("DataText") };
+            _systemUptimeText = new TextBlock
             {
-                var errorText = new TextBlock
-                {
-                    Text = "GPU-data ej tillgänglig",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                GpuInfoPanel.Children.Add(errorText);
+                Style = (Style)FindResource("DataText"),
+                Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
+            };
+            SystemPanel.Children.Add(_systemStatusText);
+            SystemPanel.Children.Add(_systemUptimeText);
+
+            HardwarePanel.Children.Clear();
+            _hardwareInfoText = new TextBlock
+            {
+                Style = (Style)FindResource("DataText"),
+                TextWrapping = TextWrapping.Wrap,
+                Text = hardwareInfoText
+            };
+            HardwarePanel.Children.Add(_hardwareInfoText);
+
+            _panelsInitialized = true;
+        }
+
+        private void UpdateCpuCoresPanel(IReadOnlyList<CpuCoreInfo> cores)
+        {
+            for (int i = 0; i < _cpuCoreTextBlocks.Length && i < cores.Count; i++)
+            {
+                var tb = _cpuCoreTextBlocks[i];
+                var core = cores[i];
+                tb.Text = $"{core.Name}: {core.UsagePercent:F1}%";
+
+                if (core.UsagePercent > 80)
+                    tb.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
+                else if (core.UsagePercent > 60)
+                    tb.Foreground = (SolidColorBrush)FindResource("WarnBrush");
+                else
+                    tb.Foreground = (SolidColorBrush)FindResource("AccentBrush");
             }
         }
 
-        private async Task UpdateThermalPanel()
+        private void UpdateMemoryPanel(SystemSnapshot s)
         {
-            ThermalPanel.Children.Clear();
-            
-            try
+            if (_memoryInfoText == null) return;
+            _memoryInfoText.Text = $"Använt: {s.UsedMemoryGB:F1} GB / {s.TotalMemoryGB:F1} GB\n" +
+                                   $"Tillgängligt: {s.AvailableMemoryGB:F1} GB";
+        }
+
+        private void UpdateGpuInfoPanel(string text)
+        {
+            if (_gpuInfoText == null) return;
+            _gpuInfoText.Text = text;
+        }
+
+        private void UpdateThermalPanel(IReadOnlyDictionary<string, float> thermals)
+        {
+            foreach (var kvp in thermals)
             {
-                var thermalData = await GetThermalData();
-                
-                foreach (var temp in thermalData)
+                if (!_thermalTextBlocks.TryGetValue(kvp.Key, out var tb))
                 {
-                    var tempText = new TextBlock
+                    tb = new TextBlock
                     {
                         Style = (Style)FindResource("DataText"),
-                        Margin = new Thickness(0, 2, 0, 0)
+                        Margin = new Thickness(0, 2, 0, 0),
+                        TextWrapping = TextWrapping.Wrap
                     };
-
-                    // Set color based on temperature with better formatting for text wrapping
-                    string tempName = temp.Key.Length > 25 ? temp.Key.Substring(0, 22) + "..." : temp.Key;
-                    
-                    if (temp.Value > 80)
-                    {
-                        tempText.Text = $"🔥 {tempName}: {temp.Value:F0}°C";
-                        tempText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
-                    }
-                    else if (temp.Value > 60)
-                    {
-                        tempText.Text = $"🔸 {tempName}: {temp.Value:F0}°C";
-                        tempText.Foreground = (SolidColorBrush)FindResource("WarnBrush");
-                    }
-                    else
-                    {
-                        tempText.Text = $"❄️ {tempName}: {temp.Value:F0}°C";
-                        tempText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
-                    }
-                    
-                    // Enable text wrapping for better display on smaller screens
-                    tempText.TextWrapping = TextWrapping.Wrap;
-                    
-                    ThermalPanel.Children.Add(tempText);
+                    _thermalTextBlocks[kvp.Key] = tb;
+                    ThermalPanel.Children.Add(tb);
                 }
+
+                string tempName = kvp.Key.Length > 25 ? kvp.Key.Substring(0, 22) + "..." : kvp.Key;
+                SolidColorBrush brush;
+
+                if (kvp.Value > 80) brush = (SolidColorBrush)FindResource("ErrorBrush");
+                else if (kvp.Value > 60) brush = (SolidColorBrush)FindResource("WarnBrush");
+                else brush = (SolidColorBrush)FindResource("AccentBrush");
+
+                // Color-coded text — no emoji icons (Sprint 4 UI update).
+                tb.Text = $"{tempName}: {kvp.Value:F0}°C";
+                tb.Foreground = brush;
             }
-            catch
+
+            var toRemove = _thermalTextBlocks.Keys.Where(k => !thermals.ContainsKey(k)).ToList();
+            foreach (var key in toRemove)
             {
-                var errorText = new TextBlock
+                ThermalPanel.Children.Remove(_thermalTextBlocks[key]);
+                _thermalTextBlocks.Remove(key);
+            }
+
+            if (_thermalTextBlocks.Count == 0 && ThermalPanel.Children.Count == 0)
+            {
+                ThermalPanel.Children.Add(new TextBlock
                 {
                     Text = "Temperaturdata ej tillgänglig",
                     Style = (Style)FindResource("DataText"),
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                ThermalPanel.Children.Add(errorText);
-            }
-        }
-
-        private async Task UpdateFanPanels()
-        {
-            try
-            {
-                var fanData = await GetFanData();
-                
-                // Only clear panels if we haven't initialized them yet or if fan count changed significantly
-                if (!_fanPanelsInitialized || Math.Abs(fanData.Count - _fanTextBlocks.Count) > 2)
-                {
-                    CpuFansPanel.Children.Clear();
-                    SystemFansPanel.Children.Clear();
-                    _fanTextBlocks.Clear();
-                    _fanPanelsInitialized = true;
-                }
-                
-                foreach (var fan in fanData)
-                {
-                    // Handle special status message for no fan data
-                    if (fan.Key == "Fan Data Status")
-                    {
-                        if (!_fanTextBlocks.ContainsKey(fan.Key))
-                        {
-                            var statusText = new TextBlock
-                            {
-                                Style = (Style)FindResource("DataText"),
-                                TextWrapping = TextWrapping.Wrap,
-                                Margin = new Thickness(0, 5, 0, 5),
-                                Text = "⚠️ No real fan data available - Try Administrator mode",
-                                Foreground = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 165, 0)) // Orange
-                            };
-                            
-                            _fanTextBlocks[fan.Key] = statusText;
-                            CpuFansPanel.Children.Add(statusText);
-                        }
-                        continue;
-                    }
-                    
-                    // Clean up fan name for better display
-                    string fanName = fan.Key.Length > 20 ? fan.Key.Substring(0, 17) + "..." : fan.Key;
-                    
-                    // Check if we already have a TextBlock for this fan
-                    if (!_fanTextBlocks.ContainsKey(fan.Key))
-                    {
-                        // Create new TextBlock only if it doesn't exist
-                        var fanText = new TextBlock
-                        {
-                            Style = (Style)FindResource("DataText"),
-                            TextWrapping = TextWrapping.Wrap,
-                            Margin = new Thickness(0, 1, 0, 1)
-                        };
-                        
-                        _fanTextBlocks[fan.Key] = fanText;
-                        
-                        // Add to appropriate panel
-                        if (fan.Key.ToLower().Contains("gpu") || 
-                            fan.Key.ToLower().Contains("nvidia") || 
-                            fan.Key.ToLower().Contains("geforce") || 
-                            fan.Key.ToLower().Contains("radeon") || 
-                            fan.Key.ToLower().Contains("amd"))
-                        {
-                            SystemFansPanel.Children.Add(fanText);
-                        }
-                        else
-                        {
-                            CpuFansPanel.Children.Add(fanText);
-                        }
-                    }
-                    
-                    // Update existing TextBlock content
-                    var existingFanText = _fanTextBlocks[fan.Key];
-                    
-                    // Set status based on RPM
-                    if (fan.Value > 2000)
-                    {
-                        existingFanText.Text = $"🟢 {fanName}: {fan.Value:F0} RPM";
-                        existingFanText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
-                    }
-                    else if (fan.Value > 800)
-                    {
-                        existingFanText.Text = $"🟡 {fanName}: {fan.Value:F0} RPM";
-                        existingFanText.Foreground = (SolidColorBrush)FindResource("WarnBrush");
-                    }
-                    else if (fan.Value > 0)
-                    {
-                        existingFanText.Text = $"🔴 {fanName}: {fan.Value:F0} RPM";
-                        existingFanText.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
-                    }
-                    else
-                    {
-                        // Check if this is a GPU fan that might be in zero RPM mode
-                        if (fan.Key.ToLower().Contains("gpu") && 
-                            (fan.Key.ToLower().Contains("nvidia") || fan.Key.ToLower().Contains("geforce")))
-                        {
-                            existingFanText.Text = $"❄️ {fanName}: Zero RPM Mode";
-                            existingFanText.Foreground = (SolidColorBrush)FindResource("AccentBrush");
-                        }
-                        else
-                        {
-                            existingFanText.Text = $"⚫ {fanName}: Inaktiv";
-                            existingFanText.Foreground = (SolidColorBrush)FindResource("TextMutedBrush");
-                        }
-                    }
-                }
-                
-                // Add informative message if no real fans found
-                if (CpuFansPanel.Children.Count == 0)
-                {
-                    string detectionStatus = GetDetectionStatusMessage();
-                    string adminStatus = _isAdminMode ? "✅ Administratörsbehörighet: Ja" : "⚠️ Administratörsbehörighet: Nej (kör som admin för bättre hårdvaruåtkomst)";
-                    
-                    CpuFansPanel.Children.Add(new TextBlock
-                    {
-                        Text = $"Inga CPU/system-fläktar detekterade\n\n{adminStatus}\n\n{detectionStatus}\n\nTroliga orsaker:\n• Moderkortet exponerar inte RPM-data\n• Fläktar anslutna direkt till PSU\n• Äldre hårdvara saknar sensor-stöd",
-                        Style = (Style)FindResource("DataText"),
-                        Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
-                        TextWrapping = TextWrapping.Wrap
-                    });
-                }
-                
-                if (SystemFansPanel.Children.Count == 0)
-                {
-                    string detectionStatus = GetDetectionStatusMessage();
-                    string adminStatus = _isAdminMode ? "✅ Administratörsbehörighet: Ja" : "⚠️ Administratörsbehörighet: Nej (kör som admin för bättre hårdvaruåtkomst)";
-                    
-                    SystemFansPanel.Children.Add(new TextBlock
-                    {
-                        Text = $"Inga GPU-fläktar detekterade\n\n{adminStatus}\n\n{detectionStatus}\n\nDetta är normalt på äldre system:\n• GPU-fläktar ej exponerade av drivrutin\n• Zero RPM Mode vid låga temperaturer\n• Passiv kylning\n• Rapporterar som procent istället för RPM",
-                        Style = (Style)FindResource("DataText"),
-                        Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
-                        TextWrapping = TextWrapping.Wrap
-                    });
-                }
-            }
-            catch
-            {
-                var errorText = new TextBlock
-                {
-                    Text = "Fläktdata ej tillgänglig",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                CpuFansPanel.Children.Add(errorText);
-                SystemFansPanel.Children.Add(errorText);
-            }
-        }
-
-        private void UpdateSystemPanel()
-        {
-            SystemPanel.Children.Clear();
-            
-            try
-            {
-                string systemStatus = "OPTIMAL";
-                SolidColorBrush statusColor = (SolidColorBrush)FindResource("AccentBrush");
-                
-                if (currentCpuUsage > 80 || currentMemoryUsage > 85 || currentTemperature > 75)
-                {
-                    systemStatus = "HÖRG BELASTNING";
-                    statusColor = (SolidColorBrush)FindResource("ErrorBrush");
-                }
-                else if (currentCpuUsage > 60 || currentMemoryUsage > 70 || currentTemperature > 60)
-                {
-                    systemStatus = "MEDIUMBELASTNING";
-                    statusColor = (SolidColorBrush)FindResource("WarnBrush");
-                }
-                
-                var statusText = new TextBlock
-                {
-                    Text = $"Status: {systemStatus}",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = statusColor
-                };
-                
-                var uptimeText = new TextBlock
-                {
-                    Text = $"Uppdaterad: {DateTime.Now:HH:mm:ss}",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                
-                SystemPanel.Children.Add(statusText);
-                SystemPanel.Children.Add(uptimeText);
-            }
-            catch
-            {
-                var errorText = new TextBlock
-                {
-                    Text = "Systemstatus ej tillgänglig",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                SystemPanel.Children.Add(errorText);
-            }
-        }
-
-        private void UpdateHardwarePanel()
-        {
-            HardwarePanel.Children.Clear();
-            
-            try
-            {
-                var hardwareInfo = GetHardwareInfo();
-                
-                var hardwareText = new TextBlock
-                {
-                    Text = hardwareInfo,
-                    Style = (Style)FindResource("DataText"),
-                    TextWrapping = TextWrapping.Wrap
-                };
-                
-                HardwarePanel.Children.Add(hardwareText);
-            }
-            catch
-            {
-                var errorText = new TextBlock
-                {
-                    Text = "Hårdvaruinformation ej tillgänglig",
-                    Style = (Style)FindResource("DataText"),
-                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush")
-                };
-                HardwarePanel.Children.Add(errorText);
-            }
-        }
-
-        private async Task<float> GetTotalMemoryGB()
-        {
-            try
-            {
-                using (var searcher = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
-                {
-                    foreach (ManagementObject obj in searcher.Get())
-                    {
-                        ulong totalBytes = (ulong)obj["TotalPhysicalMemory"];
-                        return totalBytes / (1024f * 1024f * 1024f); // Convert to GB
-                    }
-                }
-            }
-            catch
-            {
-                return 0f; // Return 0 if unable to detect memory
-            }
-            return 0f;
-        }
-
-        private async Task<float> GetGpuUsage()
-        {
-            try
-            {
-                if (computer != null)
-                {
-                    computer.Accept(new UpdateVisitor());
-                    
-                    foreach (var hardware in computer.Hardware)
-                    {
-                        if (hardware.HardwareType == HardwareType.GpuNvidia || 
-                            hardware.HardwareType == HardwareType.GpuAmd ||
-                            hardware.HardwareType == HardwareType.GpuIntel)
-                        {
-                            foreach (var sensor in hardware.Sensors)
-                            {
-                                if (sensor.SensorType == SensorType.Load && sensor.Name.Contains("GPU Core"))
-                                {
-                                    return sensor.Value ?? 0f;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // No simulated data - return 0 if no real GPU data found
-                return 0f;
-            }
-            catch
-            {
-                return -1f; // Indicates error
-            }
-        }
-
-        private async Task<float> GetAverageTemperature()
-        {
-            try
-            {
-                if (computer != null)
-                {
-                    computer.Accept(new UpdateVisitor());
-                    
-                    List<float> temperatures = new List<float>();
-                    
-                    foreach (var hardware in computer.Hardware)
-                    {
-                        foreach (var sensor in hardware.Sensors)
-                        {
-                            if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
-                            {
-                                temperatures.Add(sensor.Value.Value);
-                            }
-                        }
-                    }
-                    
-                    return temperatures.Count > 0 ? temperatures.Average() : 0f;
-                }
-                
-                return 0f;
-            }
-            catch
-            {
-                return 0f;
-            }
-        }
-
-        private async Task<Dictionary<string, float>> GetThermalData()
-        {
-            var temperatures = new Dictionary<string, float>();
-            
-            try
-            {
-                if (computer != null)
-                {
-                    computer.Accept(new UpdateVisitor());
-                    
-                    foreach (var hardware in computer.Hardware)
-                    {
-                        foreach (var sensor in hardware.Sensors)
-                        {
-                            if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
-                            {
-                                float tempValue = sensor.Value.Value;
-                                
-                                // Validate temperature reading (filter out obviously incorrect readings)
-                                if (tempValue > 0 && tempValue < 150) // Reasonable temp range 1-149°C
-                                {
-                                    string name = $"{hardware.Name} {sensor.Name}";
-                                    // Clean up sensor name for better display
-                                    name = name.Replace("Temperature", "Temp").Replace("Package", "Pkg");
-                                    temperatures[name] = tempValue;
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                // No simulated data - return empty if no real temperatures found
-            }
-            catch
-            {
-                // Return empty on error - no fake data
-            }
-            
-            return temperatures;
-        }
-
-        private async Task<Dictionary<string, float>> GetFanData()
-        {
-            var fans = new Dictionary<string, float>();
-            
-            // Prioritize real hardware data over fallback estimates
-            // Try LibreHardwareMonitor first (most accurate on modern systems)
-            await TryLibreHardwareMonitorFans(fans);
-            
-            // Only try Windows Management if no fans found yet
-            if (fans.Count == 0)
-            {
-                await TryWindowsManagementFans(fans);
-            }
-            
-            // Only use estimated/fallback values if still no real fans found
-            if (fans.Count == 0)
-            {
-                await TryEstimatedFansFromTemperature(fans);
-            }
-            
-            return fans;
-        }
-        
-        private async Task TryLibreHardwareMonitorFans(Dictionary<string, float> fans)
-        {
-            try
-            {
-                if (computer != null)
-                {
-                    computer.Accept(new UpdateVisitor());
-                    
-                    foreach (var hardware in computer.Hardware)
-                    {
-                        // Force hardware update for all hardware types
-                        hardware.Update();
-                        
-                        // Special GPU handling for modern NVIDIA/AMD cards
-                        bool isGpu = hardware.HardwareType == HardwareType.GpuNvidia || 
-                                    hardware.HardwareType == HardwareType.GpuAmd ||
-                                    hardware.HardwareType == HardwareType.GpuIntel;
-                        
-                        foreach (var sensor in hardware.Sensors)
-                        {
-                            // Check for Fan sensors (prioritize real RPM values)
-                            if (sensor.SensorType == SensorType.Fan && sensor.Value.HasValue && sensor.Value > 0)
-                            {
-                                string name = $"{hardware.Name} {sensor.Name}";
-                                float fanSpeed = sensor.Value.Value;
-                                
-                                // Modern GPUs usually report real RPM values (>100 RPM typical)
-                                // Only convert if it's clearly a percentage (0-100 range)
-                                if (isGpu && fanSpeed > 0 && fanSpeed <= 100)
-                                {
-                                    // This appears to be percentage, convert to estimated RPM
-                                    fanSpeed = fanSpeed * 30f;
-                                    name = $"{name} (estimated)";
-                                }
-                                else if (isGpu)
-                                {
-                                    // Real RPM value from modern GPU - this is what we want!
-                                    name = $"{name}";
-                                }
-                                
-                                fans[name] = fanSpeed;
-                            }
-                            // Check for Control sensors (fans often reported as Control)
-                            else if (sensor.SensorType == SensorType.Control && sensor.Value.HasValue && sensor.Value > 0)
-                            {
-                                string sensorNameLower = sensor.Name.ToLower();
-                                
-                                // Check if this is a fan-related control
-                                if (sensorNameLower.Contains("fan") || 
-                                    sensorNameLower.Contains("pump") ||
-                                    (isGpu && sensorNameLower.Contains("gpu")))
-                                {
-                                    string name = $"{hardware.Name} {sensor.Name}";
-                                    float fanSpeed = sensor.Value.Value;
-                                    
-                                    // Control sensors usually report percentage (0-100)
-                                    // Convert to RPM for display
-                                    if (fanSpeed > 0 && fanSpeed <= 100)
-                                    {
-                                        if (isGpu)
-                                        {
-                                            // GPU fans: typically 0-3000 RPM range
-                                            fanSpeed = fanSpeed * 30f;
-                                            name = $"{name} Fan";
-                                        }
-                                        else
-                                        {
-                                            // CPU/Case fans: typically 0-2000 RPM range  
-                                            fanSpeed = fanSpeed * 20f;
-                                        }
-                                    }
-                                    
-                                    fans[name] = fanSpeed;
-                                }
-                            }
-                            // Check for RPM sensors (some hardware reports RPM directly)
-                            else if (sensor.Name.ToLower().Contains("rpm") || 
-                                    sensor.Name.ToLower().Contains("fan"))
-                            {
-                                string name = $"{hardware.Name} {sensor.Name}";
-                                float fanSpeed = sensor.Value ?? 0f;
-                                fans[name] = fanSpeed;
-                            }
-                            // For GPU specifically, also check all Control sensors
-                            else if (isGpu && sensor.SensorType == SensorType.Control && 
-                                    sensor.Value.HasValue && sensor.Value > 0)
-                            {
-                                // Skip if we already have this from above
-                                string sensorNameLower = sensor.Name.ToLower();
-                                if (!sensorNameLower.Contains("fan") && !sensorNameLower.Contains("pump"))
-                                {
-                                    string name = $"{hardware.Name} {sensor.Name}";
-                                    float fanSpeed = sensor.Value.Value;
-                                    
-                                    // GPU Control sensors are often percentage
-                                    if (fanSpeed <= 100)
-                                    {
-                                        fanSpeed = fanSpeed * 30f; // Convert to RPM estimate
-                                        name = $"{name} Control";
-                                    }
-                                    
-                                    fans[name] = fanSpeed;
-                                }
-                            }
-                        }
-                        
-                        // Check sub-hardware (like CPU packages, GPU sub-components, etc.)
-                        foreach (var subHardware in hardware.SubHardware)
-                        {
-                            subHardware.Update(); // Force update
-                            
-                            foreach (var sensor in subHardware.Sensors)
-                            {
-                                if (sensor.SensorType == SensorType.Fan)
-                                {
-                                    string name = $"{subHardware.Name} {sensor.Name}";
-                                    float fanSpeed = sensor.Value ?? 0f;
-                                    fans[name] = fanSpeed;
-                                }
-                                else if (sensor.SensorType == SensorType.Control && 
-                                        (sensor.Name.ToLower().Contains("fan") || 
-                                         sensor.Name.ToLower().Contains("pump")))
-                                {
-                                    string name = $"{subHardware.Name} {sensor.Name}";
-                                    float fanSpeed = sensor.Value ?? 0f;
-                                    fans[name] = fanSpeed;
-                                }
-                                // Check for RPM sensors
-                                else if (sensor.Name.ToLower().Contains("rpm") || 
-                                        sensor.Name.ToLower().Contains("fan"))
-                                {
-                                    string name = $"{subHardware.Name} {sensor.Name}";
-                                    float fanSpeed = sensor.Value ?? 0f;
-                                    fans[name] = fanSpeed;
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"LibreHardwareMonitor fan detection failed: {ex.Message}");
-                _hardwareCapabilities["LibreHardwareMonitor"] = $"Failed: {ex.Message}";
-            }
-        }
-        
-        private async Task TryWindowsManagementFans(Dictionary<string, float> fans)
-        {
-            try
-            {
-                await Task.Run(() =>
-                {
-                    // Try Windows Management Instrumentation as fallback
-                    using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_Fan"))
-                    {
-                        foreach (ManagementObject fan in searcher.Get())
-                        {
-                            try
-                            {
-                                var name = fan["Name"]?.ToString() ?? "Unknown Fan";
-                                var speed = fan["DesiredSpeed"]?.ToString();
-                                
-                                if (!string.IsNullOrEmpty(speed) && float.TryParse(speed, out float rpm))
-                                {
-                                    fans[$"WMI {name}"] = rpm;
-                                }
-                            }
-                            catch (Exception fanEx)
-                            {
-                                Debug.WriteLine($"WMI fan reading error: {fanEx.Message}");
-                            }
-                        }
-                    }
-                    
-                    // Try thermal zone approach for fan estimation
-                    using (var searcher = new ManagementObjectSearcher("SELECT * FROM Win32_TemperatureProbe"))
-                    {
-                        foreach (ManagementObject probe in searcher.Get())
-                        {
-                            try
-                            {
-                                var name = probe["Name"]?.ToString() ?? "Unknown Probe";
-                                var temp = probe["CurrentReading"]?.ToString();
-                                
-                                if (!string.IsNullOrEmpty(temp) && float.TryParse(temp, out float temperature))
-                                {
-                                    // Don't show fake estimated values - only show real fan data
-                                    Debug.WriteLine($"Temperature data available for {name}: {temperature}°C, but no real fan data");
-                                }
-                            }
-                            catch (Exception probeEx)
-                            {
-                                Debug.WriteLine($"Temperature probe reading error: {probeEx.Message}");
-                            }
-                        }
-                    }
                 });
-                
-                if (fans.Any(f => f.Key.StartsWith("WMI")))
-                {
-                    _hardwareCapabilities["WindowsManagement"] = "Supported";
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Windows Management fan detection failed: {ex.Message}");
-                _hardwareCapabilities["WindowsManagement"] = $"Failed: {ex.Message}";
             }
         }
-        
-        private async Task TryEstimatedFansFromTemperature(Dictionary<string, float> fans)
+
+        private void UpdateFanPanels(IReadOnlyDictionary<string, FanReading> fans)
         {
-            try
+            foreach (var kvp in fans)
             {
-                // Only add a message if no real fan data was found
-                if (!fans.Any())
+                string key = kvp.Key;
+                FanReading reading = kvp.Value;
+                string displayName = key.Length > 20 ? key.Substring(0, 17) + "..." : key;
+
+                if (!_fanTextBlocks.TryGetValue(key, out var tb))
                 {
-                    fans["Fan Data Status"] = 0; // Special key to indicate no real data
-                    _hardwareCapabilities["FanData"] = "No real fan data available - check Administrator mode";
+                    tb = new TextBlock
+                    {
+                        Style = (Style)FindResource("DataText"),
+                        TextWrapping = TextWrapping.Wrap,
+                        Margin = new Thickness(0, 1, 0, 1)
+                    };
+                    _fanTextBlocks[key] = tb;
+
+                    bool routeToGpuPanel = reading.IsGpu
+                        || key.Contains("gpu", StringComparison.OrdinalIgnoreCase)
+                        || key.Contains("nvidia", StringComparison.OrdinalIgnoreCase)
+                        || key.Contains("geforce", StringComparison.OrdinalIgnoreCase)
+                        || key.Contains("radeon", StringComparison.OrdinalIgnoreCase);
+
+                    if (routeToGpuPanel) SystemFansPanel.Children.Add(tb);
+                    else CpuFansPanel.Children.Add(tb);
                 }
-                else if (fans.Count < 2) // Very few fans detected
+
+                FormatFanText(tb, displayName, reading);
+            }
+
+            var toRemove = _fanTextBlocks.Keys.Where(k => !fans.ContainsKey(k)).ToList();
+            foreach (var key in toRemove)
+            {
+                var tb = _fanTextBlocks[key];
+                CpuFansPanel.Children.Remove(tb);
+                SystemFansPanel.Children.Remove(tb);
+                _fanTextBlocks.Remove(key);
+            }
+
+            EnsureFanEmptyPlaceholders();
+        }
+
+        private void FormatFanText(TextBlock tb, string displayName, FanReading reading)
+        {
+            // Color-coded text — no emoji icons (Sprint 4 UI update).
+            if (reading.IsPercent)
+            {
+                tb.Text = $"{displayName}: {reading.RawValue:F0}%";
+                tb.Foreground = reading.RawValue > 70
+                    ? (SolidColorBrush)FindResource("WarnBrush")
+                    : (SolidColorBrush)FindResource("AccentBrush");
+                return;
+            }
+
+            if (reading.RawValue > 2000)
+            {
+                tb.Text = $"{displayName}: {reading.RawValue:F0} RPM";
+                tb.Foreground = (SolidColorBrush)FindResource("AccentBrush");
+            }
+            else if (reading.RawValue > 800)
+            {
+                tb.Text = $"{displayName}: {reading.RawValue:F0} RPM";
+                tb.Foreground = (SolidColorBrush)FindResource("WarnBrush");
+            }
+            else if (reading.RawValue > 0)
+            {
+                tb.Text = $"{displayName}: {reading.RawValue:F0} RPM";
+                tb.Foreground = (SolidColorBrush)FindResource("ErrorBrush");
+            }
+            else
+            {
+                if (reading.IsGpu)
                 {
-                    _hardwareCapabilities["FanData"] = $"Limited fan data ({fans.Count} fans detected)";
+                    tb.Text = $"{displayName}: Zero RPM Mode";
+                    tb.Foreground = (SolidColorBrush)FindResource("AccentBrush");
                 }
                 else
                 {
-                    _hardwareCapabilities["FanData"] = $"Real fan data available ({fans.Count} fans detected)";
+                    tb.Text = $"{displayName}: Inaktiv";
+                    tb.Foreground = (SolidColorBrush)FindResource("TextMutedBrush");
                 }
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Fan data assessment failed: {ex.Message}");
-                _hardwareCapabilities["FanData"] = "Fan data assessment failed";
-            }
         }
-        
-        private float EstimateFanSpeedFromTemperature(float temperature, string componentName)
+
+        private void EnsureFanEmptyPlaceholders()
         {
-            // Temperature-based fan speed estimation for older hardware
-            if (temperature < 40) return 800;   // Low temp = low fan speed
-            if (temperature < 50) return 1200;  // Medium temp = medium fan speed  
-            if (temperature < 65) return 2000;  // High temp = high fan speed
-            if (temperature < 80) return 3000;  // Very high temp = very high fan speed
-            return 4000; // Critical temp = maximum fan speed
-        }
-        
-        private async Task<Dictionary<string, float>> GetDetailedTemperatureData()
-        {
-            var temperatures = new Dictionary<string, float>();
-            
-            try
+            if (_viewModel == null) return;
+
+            string adminStatus = _viewModel.IsAdminMode
+                ? "Administratörsbehörighet: Ja"
+                : "Administratörsbehörighet: Nej (kör som admin för bättre hårdvaruåtkomst)";
+
+            if (CpuFansPanel.Children.Count == 0)
             {
-                await Task.Run(() =>
+                CpuFansPanel.Children.Add(new TextBlock
                 {
-                    computer.Accept(new UpdateVisitor());
-                    
-                    foreach (var hardware in computer.Hardware)
-                    {
-                        foreach (var sensor in hardware.Sensors)
-                        {
-                            if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
-                            {
-                                string name = $"{hardware.Name} {sensor.Name}";
-                                temperatures[name] = sensor.Value.Value;
-                            }
-                        }
-                        
-                        // Check sub-hardware
-                        foreach (var subHardware in hardware.SubHardware)
-                        {
-                            foreach (var sensor in subHardware.Sensors)
-                            {
-                                if (sensor.SensorType == SensorType.Temperature && sensor.Value.HasValue)
-                                {
-                                    string name = $"{subHardware.Name} {sensor.Name}";
-                                    temperatures[name] = sensor.Value.Value;
-                                }
-                            }
-                        }
-                    }
+                    Text = $"Inga CPU/system-fläktar detekterade\n\n{adminStatus}\n\nTroliga orsaker:\n• Moderkortet exponerar inte RPM-data\n• Fläktar anslutna direkt till PSU\n• Äldre hårdvara saknar sensor-stöd",
+                    Style = (Style)FindResource("DataText"),
+                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
+                    TextWrapping = TextWrapping.Wrap
                 });
             }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"Temperature data collection failed: {ex.Message}");
-            }
-            
-            return temperatures;
-        }
-        
-        private string GetDetectionStatusMessage()
-        {
-            var statusParts = new List<string>();
-            
-            foreach (var capability in _hardwareCapabilities)
-            {
-                string emoji = capability.Value.StartsWith("Failed") ? "❌" : "✅";
-                string simpleName = capability.Key switch
-                {
-                    "LibreHardwareMonitor" => "LibreHardwareMonitor",
-                    "WindowsManagement" => "Windows WMI",
-                    "TemperatureEstimation" => "Temperaturbaserad uppskattning",
-                    _ => capability.Key
-                };
-                statusParts.Add($"{emoji} {simpleName}: {capability.Value}");
-            }
-            
-            return statusParts.Count > 0 
-                ? $"Detektionsstatus:\n{string.Join("\n", statusParts)}" 
-                : "Detektionsstatus: Initialiserar...";
-        }
 
-        private async Task<string> GetGpuInfo()
-        {
-            try
+            if (SystemFansPanel.Children.Count == 0)
             {
-                string gpuInfo = "GPU Information:\n";
-                bool foundGpu = false;
-                
-                if (computer != null)
+                SystemFansPanel.Children.Add(new TextBlock
                 {
-                    computer.Accept(new UpdateVisitor());
-                    
-                    foreach (var hardware in computer.Hardware)
-                    {
-                        if (hardware.HardwareType == HardwareType.GpuNvidia || 
-                            hardware.HardwareType == HardwareType.GpuAmd ||
-                            hardware.HardwareType == HardwareType.GpuIntel)
-                        {
-                            foundGpu = true;
-                            gpuInfo += $"{hardware.Name}\n";
-                            
-                            foreach (var sensor in hardware.Sensors)
-                            {
-                                if (sensor.Value.HasValue)
-                                {
-                                    if (sensor.SensorType == SensorType.Load)
-                                        gpuInfo += $"Load: {sensor.Value:F1}%\n";
-                                    else if (sensor.SensorType == SensorType.Temperature)
-                                        gpuInfo += $"Temp: {sensor.Value:F0}°C\n";
-                                    else if (sensor.SensorType == SensorType.SmallData)
-                                        gpuInfo += $"Memory: {sensor.Value:F1} MB\n";
-                                }
-                            }
-                        }
-                    }
-                }
-                
-                if (!foundGpu)
-                {
-                    gpuInfo = "Ingen GPU detekterad\n\nMöjliga orsaker:\n• LibreHardwareMonitor stöder ej GPU\n• Administratörsbehörighet krävs\n• GPU-drivrutiner saknas";
-                }
-                
-                return gpuInfo;
-            }
-            catch
-            {
-                return "GPU-information ej tillgänglig\nKräver administratörsbehörighet";
+                    Text = $"Inga GPU-fläktar detekterade\n\n{adminStatus}\n\nDetta är normalt på äldre system:\n• GPU-fläktar ej exponerade av drivrutin\n• Zero RPM Mode vid låga temperaturer\n• Passiv kylning",
+                    Style = (Style)FindResource("DataText"),
+                    Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
+                    TextWrapping = TextWrapping.Wrap
+                });
             }
         }
 
-        private string GetHardwareInfo()
+        private void UpdateSystemPanel(SystemSnapshot s)
         {
-            try
+            if (_systemStatusText == null || _systemUptimeText == null) return;
+
+            SolidColorBrush color = s.SystemStatus switch
             {
-                string info = "";
-                
-                // Processor info
-                using (var searcher = new ManagementObjectSearcher("SELECT Name FROM Win32_Processor"))
-                {
-                    foreach (ManagementObject obj in searcher.Get())
-                    {
-                        info += $"CPU: {obj["Name"]}\n";
-                        break;
-                    }
-                }
-                
-                // Memory info
-                info += $"Cores: {Environment.ProcessorCount}\n";
-                // Få mer användarvänlig OS-info
-            var os = Environment.OSVersion;
-            var friendlyName = GetFriendlyOSName(os);
-            info += $"OS: {friendlyName} (Build {os.Version.Build})\n";
-                info += $"User: {Environment.UserName}\n";
-                
-                return info;
-            }
-            catch
-            {
-                return "Hårdvaruinformation ej tillgänglig";
-            }
+                SystemStatusEvaluator.High => (SolidColorBrush)FindResource("ErrorBrush"),
+                SystemStatusEvaluator.Medium => (SolidColorBrush)FindResource("WarnBrush"),
+                _ => (SolidColorBrush)FindResource("AccentBrush")
+            };
+
+            _systemStatusText.Text = $"Status: {s.SystemStatus}";
+            _systemStatusText.Foreground = color;
+            _systemUptimeText.Text = $"Uppdaterad: {s.Timestamp:HH:mm:ss}";
         }
 
-        private void LoadSystemInfo()
-        {
-            // Initial load - data will be updated by timer
-        }
+        // ===== UI chrome handlers =====
+        // Note: WindowChrome handles drag-to-move and double-click-to-maximize natively —
+        // no explicit DragMove handler needed.
 
         private void MinimizeButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.WindowState = WindowState.Minimized;
-        }
+            => this.WindowState = WindowState.Minimized;
 
         private void MaximizeButton_Click(object sender, RoutedEventArgs e)
-        {
-            this.WindowState = this.WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
-        }
+            => this.WindowState = this.WindowState == WindowState.Maximized
+                ? WindowState.Normal
+                : WindowState.Maximized;
 
-        private string GetFriendlyOSName(OperatingSystem os)
+        private void CloseButton_Click(object sender, RoutedEventArgs e) => this.Close();
+
+        private void SettingsButton_Click(object sender, RoutedEventArgs e)
         {
-            if (os.Platform == PlatformID.Win32NT)
+            try
             {
-                var version = os.Version;
-                
-                if (version.Major == 10)
+                var dlg = new SettingsWindow { Owner = this };
+                if (dlg.ShowDialog() == true)
                 {
-                    // Windows 11 börjar med build 22000
-                    if (version.Build >= 22000)
-                    {
-                        return "Windows 11";
-                    }
-                    else
-                    {
-                        return "Windows 10";
-                    }
+                    // Settings changed — propagate poll-interval change to the running timer.
+                    _viewModel?.ApplyUpdatedSettings();
                 }
-                else if (version.Major == 6)
-                {
-                    if (version.Minor == 3) return "Windows 8.1";
-                    if (version.Minor == 2) return "Windows 8";
-                    if (version.Minor == 1) return "Windows 7";
-                }
-                
-                return $"Windows NT {version.Major}.{version.Minor}";
             }
-            
-            return os.ToString();
+            catch (Exception ex)
+            {
+                Logger.Warn("Open SettingsWindow failed", ex);
+                MessageBox.Show("Kunde inte öppna inställningar. Se loggen för detaljer.",
+                    "SystemFlow Pro", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
-        private void CloseButton_Click(object sender, RoutedEventArgs e)
+        private void AboutButton_Click(object sender, RoutedEventArgs e)
         {
-            this.Close();
+            try
+            {
+                var dlg = new AboutWindow { Owner = this };
+                dlg.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                Logger.Warn("Open AboutWindow failed", ex);
+                MessageBox.Show("Kunde inte öppna Om-dialogen. Se loggen för detaljer.",
+                    "SystemFlow Pro", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
         }
 
         protected override void OnClosed(EventArgs e)
         {
             try
             {
-                _timer?.Stop();
-                computer?.Close();
-                
-                foreach (var counter in _cpuCoreCounters ?? new List<PerformanceCounter>())
+                StateChanged -= OnWindowStateChanged;
+                Loaded -= OnLoaded;
+
+                if (_viewModel != null)
                 {
-                    counter?.Dispose();
+                    _viewModel.SnapshotChanged -= OnSnapshotChanged;
+                    _viewModel.Dispose();
+                    _viewModel = null;
                 }
-                _cpuCounter?.Dispose();
-                _memoryCounter?.Dispose();
-                _gpuCounter?.Dispose();
             }
-            catch { }
-            
+            catch (Exception ex)
+            {
+                Logger.Warn("MainWindow.OnClosed cleanup failed", ex);
+            }
+
             base.OnClosed(e);
         }
     }
-
-    public class UpdateVisitor : IVisitor
-    {
-        public void VisitComputer(IComputer computer)
-        {
-            computer.Traverse(this);
-        }
-
-        public void VisitHardware(IHardware hardware)
-        {
-            hardware.Update();
-            foreach (IHardware subHardware in hardware.SubHardware)
-                subHardware.Accept(this);
-        }
-
-        public void VisitSensor(ISensor sensor) { }
-        public void VisitParameter(IParameter parameter) { }
-    }
-} 
+}

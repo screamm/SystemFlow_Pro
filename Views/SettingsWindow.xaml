@@ -1,0 +1,242 @@
+<Window x:Class="SystemMonitorApp.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:sys="clr-namespace:System;assembly=mscorlib"
+        Title="Inställningar"
+        Height="440" Width="500"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        Icon="..\app.ico"
+        Background="#0D0E13"
+        FontFamily="Segoe UI Variable"
+        AutomationProperties.Name="Inställningar">
+
+    <Window.Resources>
+        <SolidColorBrush x:Key="BackgroundBrush" Color="#0D0E13"/>
+        <SolidColorBrush x:Key="CardBrush" Color="#191B23"/>
+        <SolidColorBrush x:Key="AccentBrush" Color="#00E5C7"/>
+        <SolidColorBrush x:Key="BorderBrush" Color="#2A2D36"/>
+        <SolidColorBrush x:Key="TextPrimaryBrush" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondaryBrush" Color="#F1F5F9"/>
+        <SolidColorBrush x:Key="TextMutedBrush" Color="#A8B2C0"/>
+
+        <Style x:Key="SectionLabel" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,6"/>
+        </Style>
+
+        <Style x:Key="HelperText" TargetType="TextBlock">
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="Foreground" Value="{StaticResource TextMutedBrush}"/>
+            <Setter Property="Margin" Value="0,4,0,0"/>
+        </Style>
+
+        <Style x:Key="AccentButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource AccentBrush}"/>
+            <Setter Property="Foreground" Value="#0A0B0F"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="24,10"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GhostButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontWeight" Value="Medium"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="24,10"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="MinWidth" Value="100"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="8"
+                                Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="DarkComboBox" TargetType="ComboBox">
+            <Setter Property="Background" Value="{StaticResource CardBrush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="MinHeight" Value="34"/>
+        </Style>
+
+        <Style x:Key="DarkRadio" TargetType="RadioButton">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="Margin" Value="0,0,24,0"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+
+        <Style x:Key="DarkCheck" TargetType="CheckBox">
+            <Setter Property="Foreground" Value="{StaticResource TextSecondaryBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI Variable"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+    </Window.Resources>
+
+    <Border Background="{StaticResource BackgroundBrush}"
+            BorderBrush="{StaticResource BorderBrush}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Padding="24">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Header -->
+            <StackPanel Grid.Row="0" Margin="0,0,0,20">
+                <TextBlock Text="Inställningar"
+                           FontFamily="Segoe UI Variable Display"
+                           FontSize="22"
+                           FontWeight="SemiBold"
+                           Foreground="{StaticResource TextPrimaryBrush}"/>
+                <TextBlock Text="Anpassa övervakning och gränssnitt"
+                           FontSize="12"
+                           Foreground="{StaticResource TextMutedBrush}"
+                           Margin="0,4,0,0"/>
+            </StackPanel>
+
+            <!-- Settings body -->
+            <StackPanel Grid.Row="1">
+
+                <!-- 1. Pollingintervall -->
+                <StackPanel Margin="0,0,0,18">
+                    <TextBlock Text="Pollingintervall" Style="{StaticResource SectionLabel}"/>
+                    <ComboBox x:Name="PollIntervalCombo"
+                              Style="{StaticResource DarkComboBox}"
+                              TabIndex="1"
+                              SelectedValuePath="Tag"
+                              SelectedValue="{Binding PollIntervalMs, Mode=TwoWay}"
+                              AutomationProperties.Name="Pollingintervall">
+                        <ComboBoxItem Content="500 ms">
+                            <ComboBoxItem.Tag>
+                                <sys:Int32>500</sys:Int32>
+                            </ComboBoxItem.Tag>
+                        </ComboBoxItem>
+                        <ComboBoxItem Content="1 sekund">
+                            <ComboBoxItem.Tag>
+                                <sys:Int32>1000</sys:Int32>
+                            </ComboBoxItem.Tag>
+                        </ComboBoxItem>
+                        <ComboBoxItem Content="2 sekunder">
+                            <ComboBoxItem.Tag>
+                                <sys:Int32>2000</sys:Int32>
+                            </ComboBoxItem.Tag>
+                        </ComboBoxItem>
+                        <ComboBoxItem Content="5 sekunder">
+                            <ComboBoxItem.Tag>
+                                <sys:Int32>5000</sys:Int32>
+                            </ComboBoxItem.Tag>
+                        </ComboBoxItem>
+                    </ComboBox>
+                    <TextBlock Text="Hur ofta systemdata uppdateras"
+                               Style="{StaticResource HelperText}"/>
+                </StackPanel>
+
+                <!-- 2. Temperaturenhet -->
+                <StackPanel Margin="0,0,0,18">
+                    <TextBlock Text="Temperaturenhet" Style="{StaticResource SectionLabel}"/>
+                    <StackPanel Orientation="Horizontal">
+                        <RadioButton x:Name="CelsiusRadio"
+                                     Content="Celsius (°C)"
+                                     GroupName="TempUnit"
+                                     Style="{StaticResource DarkRadio}"
+                                     TabIndex="2"
+                                     IsChecked="{Binding IsCelsius, Mode=TwoWay}"
+                                     AutomationProperties.Name="Temperaturenhet Celsius"/>
+                        <RadioButton x:Name="FahrenheitRadio"
+                                     Content="Fahrenheit (°F)"
+                                     GroupName="TempUnit"
+                                     Style="{StaticResource DarkRadio}"
+                                     TabIndex="2"
+                                     AutomationProperties.Name="Temperaturenhet Fahrenheit"/>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- 3. Pausa vid minimering -->
+                <StackPanel Margin="0,0,0,12">
+                    <CheckBox x:Name="PauseMinCheck"
+                              Content="Pausa datauppdatering när fönstret minimeras"
+                              Style="{StaticResource DarkCheck}"
+                              TabIndex="3"
+                              IsChecked="{Binding PauseWhenMinimized, Mode=TwoWay}"
+                              AutomationProperties.Name="Pausa vid minimering"/>
+                </StackPanel>
+
+                <!-- 4. Starta minimerad -->
+                <StackPanel>
+                    <CheckBox x:Name="StartMinCheck"
+                              Content="Starta appen minimerad"
+                              Style="{StaticResource DarkCheck}"
+                              TabIndex="4"
+                              IsChecked="{Binding StartMinimized, Mode=TwoWay}"
+                              AutomationProperties.Name="Starta minimerad"/>
+                </StackPanel>
+
+            </StackPanel>
+
+            <!-- Action buttons -->
+            <StackPanel Grid.Row="2"
+                        Orientation="Horizontal"
+                        HorizontalAlignment="Right"
+                        Margin="0,20,0,0">
+                <Button x:Name="CancelButton"
+                        Content="Avbryt"
+                        Style="{StaticResource GhostButton}"
+                        TabIndex="6"
+                        Margin="0,0,10,0"
+                        Click="CancelButton_Click"
+                        IsCancel="True"
+                        AutomationProperties.Name="Avbryt och stäng"/>
+                <Button x:Name="SaveButton"
+                        Content="Spara"
+                        Style="{StaticResource AccentButton}"
+                        TabIndex="5"
+                        Click="SaveButton_Click"
+                        IsDefault="True"
+                        AutomationProperties.Name="Spara inställningar"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

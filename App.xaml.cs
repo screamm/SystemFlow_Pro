@@ -1,63 +1,86 @@
+using System;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
+using SystemMonitorApp.Services;
 
 namespace SystemMonitorApp
 {
     public partial class App : Application
     {
-        private SplashWindow _splashWindow;
+        private const int MinSplashMs = 800;
+
+        private SplashWindow? _splashWindow;
 
         protected override void OnStartup(StartupEventArgs e)
         {
             base.OnStartup(e);
-            
-            // Show splash screen immediately
+
+            RegisterGlobalExceptionHandlers();
+            Logger.Info($"SystemFlow Pro starting. Version={GetAssemblyVersion()}, OS={Environment.OSVersion}, .NET={Environment.Version}");
+            _ = SettingsService.Current; // trigger static init so settings load before any consumers
+
             _splashWindow = new SplashWindow();
             _splashWindow.Show();
-            
-            // Load main application asynchronously
-            Task.Run(async () =>
+
+            _ = StartMainWindowAsync();
+        }
+
+        private async Task StartMainWindowAsync()
+        {
+            var splashStarted = DateTime.UtcNow;
+            MainWindow? mainWindow = null;
+            bool showAdminMessage = false;
+            bool startupFailed = false;
+
+            try
             {
-                // Ensure splash shows for at least 2 seconds
-                await Task.Delay(2000);
-                
-                // Create main window on background thread (non-UI operations only)
-                MainWindow mainWindow = null;
-                
-                // Create the window on UI thread but don't show it yet
+                // Create window on UI thread (minimal — constructor does nothing heavy).
                 await Dispatcher.InvokeAsync(() =>
                 {
                     mainWindow = new MainWindow();
                     MainWindow = mainWindow;
                 });
-                
-                // Let the splash screen continue animating while we do admin check
-                bool showAdminMessage = false;
-                
-                // Check admin status on background thread
+
+                if (mainWindow == null)
+                    throw new InvalidOperationException("MainWindow creation returned null");
+
+                // Heavy init happens on background thread now — splash can stay interactive.
+                await mainWindow.InitializeAsync();
+
+                // Admin detection (cheap but do it off the main path).
                 await Task.Run(() =>
                 {
-                    var principal = new System.Security.Principal.WindowsPrincipal(
-                        System.Security.Principal.WindowsIdentity.GetCurrent());
-                    showAdminMessage = !principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+                    try
+                    {
+                        var principal = new System.Security.Principal.WindowsPrincipal(
+                            System.Security.Principal.WindowsIdentity.GetCurrent());
+                        showAdminMessage = !principal.IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator);
+                    }
+                    catch (Exception ex)
+                    {
+                        Logger.Warn("Admin-status detection failed", ex);
+                    }
                 });
-                
-                // Small delay to ensure smooth transition
-                await Task.Delay(300);
-                
-                // Show main window on UI thread (minimal operation)
-                await Dispatcher.InvokeAsync(() => mainWindow.Show());
-                
-                // Small delay to let main window render
-                await Task.Delay(200);
-                
-                // Close splash screen on UI thread
-                await Dispatcher.InvokeAsync(() => _splashWindow.CloseSplash());
-                
-                // Show admin message after splash is fully closed
+
+                // Ensure splash is visible at least MinSplashMs so it doesn't flash.
+                var elapsed = (DateTime.UtcNow - splashStarted).TotalMilliseconds;
+                if (elapsed < MinSplashMs)
+                    await Task.Delay(MinSplashMs - (int)elapsed);
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    if (SettingsService.Current.StartMinimized)
+                        mainWindow.WindowState = WindowState.Minimized;
+                    mainWindow.Show();
+                });
+
+                // Tiny settle time so the main window renders before splash fades.
+                await Task.Delay(150);
+
                 if (showAdminMessage)
                 {
-                    await Task.Delay(600);
+                    await Task.Delay(500);
                     await Dispatcher.InvokeAsync(() =>
                     {
                         MessageBox.Show(
@@ -68,7 +91,126 @@ namespace SystemMonitorApp
                             MessageBoxImage.Information);
                     });
                 }
-            });
+
+                Logger.Info($"Main window shown successfully (total startup {((DateTime.UtcNow - splashStarted).TotalMilliseconds):F0}ms)");
+
+                // Fire-and-forget update check. Non-blocking; failures are silent.
+                _ = CheckForUpdatesInBackground();
+            }
+            catch (Exception ex)
+            {
+                startupFailed = true;
+                Logger.Error("Startup sequence failed", ex);
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    MessageBox.Show(
+                        $"Ett fel uppstod vid start av SystemFlow Pro.\n\n{ex.Message}\n\nSe loggen i %APPDATA%\\SystemFlow Pro\\logs för detaljer.",
+                        "Startfel",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                });
+            }
+            finally
+            {
+                // Splash MUST close regardless of success/failure — otherwise user sees both.
+                try
+                {
+                    await Dispatcher.InvokeAsync(() => _splashWindow?.CloseSplash());
+                }
+                catch (Exception ex) { Logger.Warn("Splash close failed", ex); }
+
+                if (startupFailed)
+                    await Dispatcher.InvokeAsync(() => Shutdown(1));
+            }
+        }
+
+        private async Task CheckForUpdatesInBackground()
+        {
+            try
+            {
+                // Wait a moment so the user sees the UI before any notification pops.
+                await Task.Delay(TimeSpan.FromSeconds(8));
+                var info = await UpdateChecker.CheckAsync();
+                if (info == null) return;
+
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    var result = MessageBox.Show(
+                        $"Ny version tillgänglig: {info.LatestVersion}\n\nVill du öppna release-sidan?",
+                        "SystemFlow Pro — uppdatering tillgänglig",
+                        MessageBoxButton.YesNo,
+                        MessageBoxImage.Information);
+
+                    if (result == MessageBoxResult.Yes && !string.IsNullOrEmpty(info.ReleaseUrl))
+                    {
+                        try
+                        {
+                            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+                            {
+                                FileName = info.ReleaseUrl,
+                                UseShellExecute = true
+                            });
+                        }
+                        catch (Exception ex) { Logger.Warn("Open release URL failed", ex); }
+                    }
+                });
+            }
+            catch (Exception ex)
+            {
+                Logger.Info($"Update check background task failed (silent): {ex.Message}");
+            }
+        }
+
+        private void RegisterGlobalExceptionHandlers()
+        {
+            DispatcherUnhandledException += (s, e) =>
+            {
+                Logger.Error("Unhandled UI exception", e.Exception);
+                try
+                {
+                    MessageBox.Show(
+                        $"Ett oväntat fel uppstod.\n\n{e.Exception.Message}\n\n" +
+                        "Felet har sparats i loggen:\n%APPDATA%\\SystemFlow Pro\\logs",
+                        "SystemFlow Pro",
+                        MessageBoxButton.OK,
+                        MessageBoxImage.Error);
+                }
+                catch { }
+                e.Handled = true;
+            };
+
+            TaskScheduler.UnobservedTaskException += (s, e) =>
+            {
+                Logger.Error("Unobserved task exception", e.Exception);
+                e.SetObserved();
+            };
+
+            AppDomain.CurrentDomain.UnhandledException += (s, e) =>
+            {
+                if (e.ExceptionObject is Exception ex)
+                    Logger.Error($"AppDomain unhandled exception (terminating={e.IsTerminating})", ex);
+                else
+                    Logger.Error($"AppDomain unhandled non-exception (terminating={e.IsTerminating})");
+                Logger.Flush();
+            };
+        }
+
+        protected override void OnExit(ExitEventArgs e)
+        {
+            Logger.Info($"SystemFlow Pro exiting. Code={e.ApplicationExitCode}");
+            Logger.Flush();
+            Logger.Shutdown();
+            base.OnExit(e);
+        }
+
+        private static string GetAssemblyVersion()
+        {
+            try
+            {
+                return System.Reflection.Assembly.GetExecutingAssembly()
+                    .GetName().Version?.ToString() ?? "unknown";
+            }
+            catch { return "unknown"; }
         }
     }
-} 
+}

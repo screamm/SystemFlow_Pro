@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main, 'sprint-*']
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          global-json-file: global.json
+
+      - name: Show .NET version
+        run: dotnet --info
+
+      - name: Restore
+        run: dotnet restore SystemFlow_Pro.sln
+
+      - name: Build
+        run: dotnet build SystemFlow_Pro.sln -c Release --no-restore /warnaserror
+
+      - name: Test
+        run: dotnet test Tests/SystemFlow.Tests/SystemFlow.Tests.csproj -c Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ${{ github.workspace }}/TestResults
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: ${{ github.workspace }}/TestResults/*.trx
+          retention-days: 30
+
+      - name: Publish single-file build (smoke test)
+        run: dotnet publish SystemMonitorApp.csproj -c Release -r win-x64 --self-contained true -o publish-smoke --no-restore
+
+      - name: Upload smoke artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: smoke-build
+          path: publish-smoke/SystemFlow-Pro.exe
+          retention-days: 7

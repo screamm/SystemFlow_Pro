@@ -1,0 +1,75 @@
+SystemFlow Pro - Third-Party License Attribution
+=================================================
+
+SystemFlow Pro is distributed with the following third-party components.
+Copyright and license notices below are included in compliance with their
+respective license terms.
+
+---
+
+## LibreHardwareMonitorLib 0.9.4
+
+License: Mozilla Public License 2.0 (MPL 2.0)
+Copyright: 2020-2024 LibreHardwareMonitor and Contributors
+Source: https://github.com/LibreHardwareMonitor/LibreHardwareMonitor
+
+The LibreHardwareMonitor source code is available at the above URL.
+Modifications to LibreHardwareMonitorLib, if any, must be made available
+under the same license.
+
+Full MPL 2.0 license text: https://www.mozilla.org/en-US/MPL/2.0/
+
+SystemFlow Pro uses LibreHardwareMonitorLib as-is (unmodified).
+
+---
+
+## .NET 9 Runtime (Microsoft.NETCore.App, Microsoft.WindowsDesktop.App)
+
+License: MIT License
+Copyright: (c) .NET Foundation and Contributors
+Source: https://github.com/dotnet/runtime
+
+The .NET Runtime and Windows Desktop runtime are included as part of the
+self-contained distribution. License text available at:
+https://github.com/dotnet/runtime/blob/main/LICENSE.TXT
+
+---
+
+## System.Management 9.0.0
+
+License: MIT License
+Copyright: (c) Microsoft Corporation
+Source: https://github.com/dotnet/runtime
+
+Bundled as part of the .NET runtime components.
+
+---
+
+## Segoe Fluent Icons & Segoe MDL2 Assets
+
+License: Proprietary (Microsoft)
+Source: Included with Windows 10 / Windows 11
+
+These icon fonts ship with Windows and are used at runtime.
+Usage is governed by the Windows license terms on the end user's system.
+Not redistributed with SystemFlow Pro.
+
+---
+
+## Consolas font
+
+License: Proprietary (Microsoft)
+Source: Included with Windows
+
+Used for data-text display. Ships with Windows.
+
+---
+
+## Changes from upstream
+
+None. All third-party components are used as-is.
+
+---
+
+For questions about licensing or attribution:
+https://github.com/screamm/SystemFlow_Pro/issues

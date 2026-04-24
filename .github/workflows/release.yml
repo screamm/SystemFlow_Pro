@@ -1,0 +1,79 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.0.x'
+          global-json-file: global.json
+
+      - name: Extract version from tag
+        id: ver
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+          # Strip any suffix (-beta.N, -rc.N) for assembly versions that require 4-part numeric.
+          CORE="${VERSION%%-*}"
+          echo "core=${CORE}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore
+        run: dotnet restore SystemFlow_Pro.sln
+
+      - name: Run tests
+        run: dotnet test Tests/SystemFlow.Tests/SystemFlow.Tests.csproj -c Release --logger "trx"
+
+      - name: Publish self-contained
+        run: |
+          dotnet publish SystemMonitorApp.csproj `
+            -c Release `
+            -r win-x64 `
+            --self-contained true `
+            -p:Version=${{ steps.ver.outputs.version }} `
+            -p:AssemblyVersion=${{ steps.ver.outputs.core }}.0 `
+            -p:FileVersion=${{ steps.ver.outputs.core }}.0 `
+            -p:PublishSingleFile=true `
+            -p:IncludeNativeLibrariesForSelfExtract=true `
+            -p:EnableCompressionInSingleFile=true `
+            -o publish
+
+      - name: Copy license files
+        run: |
+          if (Test-Path LICENSE) { Copy-Item LICENSE publish\LICENSE.txt -Force }
+          if (Test-Path THIRD_PARTY_LICENSES.txt) { Copy-Item THIRD_PARTY_LICENSES.txt publish\ -Force }
+          if (Test-Path PRIVACY.md) { Copy-Item PRIVACY.md publish\ -Force }
+          if (Test-Path README.md) { Copy-Item README.md publish\ -Force }
+
+      # SystemFlow Pro is distributed unsigned as portable open source.
+      # Users handle SmartScreen via "More info" → "Run anyway" on first launch
+      # (documented in README and FAQ).
+
+      - name: Create zip
+        run: |
+          $zipName = "SystemFlow-Pro-v${{ steps.ver.outputs.version }}-win-x64.zip"
+          Compress-Archive -Path publish\* -DestinationPath $zipName -Force
+          echo "ZIP_NAME=$zipName" >> $env:GITHUB_ENV
+
+      - name: Create release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.ZIP_NAME }}
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(steps.ver.outputs.version, '-') }}

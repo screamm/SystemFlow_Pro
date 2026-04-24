@@ -1,10 +1,23 @@
 # Build outputs
 bin/
 obj/
+publish/
 publish-*/
 *.exe
 *.dll
 *.pdb
+
+# Code signing artifacts (never commit)
+*.pfx
+*.p12
+*.snk
+cert.*
+
+# Local settings that must never hit the repo
+settings.local.json
+
+# Internal dev scripts (not for distribution)
+scripts/
 
 # User-specific files
 *.suo
