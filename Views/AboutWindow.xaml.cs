@@ -22,16 +22,32 @@ public partial class AboutWindow : Window
 
     private static DateTime GetBuildDate(Assembly assembly)
     {
+        // In single-file publish Assembly.Location is empty. Use AppContext.BaseDirectory
+        // and probe for the running executable there instead.
+        try
+        {
+            var baseDir = AppContext.BaseDirectory;
+            if (!string.IsNullOrEmpty(baseDir))
+            {
+                var exe = Path.Combine(baseDir, "SystemFlow-Pro.exe");
+                if (File.Exists(exe))
+                    return File.GetLastWriteTime(exe);
+            }
+        }
+        catch { /* fall through */ }
+
+        // Fallback: attempt legacy Location (works in non-single-file debug builds).
+        // IL3000 warning suppressed: we explicitly handle empty-Location case.
+#pragma warning disable IL3000
         try
         {
             var location = assembly.Location;
             if (!string.IsNullOrEmpty(location) && File.Exists(location))
                 return File.GetLastWriteTime(location);
         }
-        catch
-        {
-            // fall through
-        }
+        catch { /* fall through */ }
+#pragma warning restore IL3000
+
         return DateTime.Now;
     }
 

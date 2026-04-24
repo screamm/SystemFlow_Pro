@@ -417,7 +417,7 @@
                         </TextBlock.Foreground>
                     </TextBlock>
 
-                    <TextBlock Grid.Row="3" Text="MINNE ANVÄNDNING"
+                    <TextBlock Grid.Row="3" Text="MINNESANVÄNDNING"
                                Style="{StaticResource HeroLabel}" Margin="0,0,0,12"/>
                 </Grid>
             </Border>
@@ -506,7 +506,7 @@
             <Border Grid.Column="2" Style="{StaticResource ModernCard}" Margin="8"
                     AutomationProperties.Name="Minne och termala sensorer">
                 <StackPanel Margin="20">
-                    <TextBlock Text="MINNE STATUS" Style="{StaticResource SectionHeader}"/>
+                    <TextBlock Text="MINNESSTATUS" Style="{StaticResource SectionHeader}"/>
                     <StackPanel x:Name="MemoryPanel" Margin="0,0,0,16"/>
 
                     <ProgressBar x:Name="MemoryProgressBar" Height="8"
@@ -534,7 +534,7 @@
                     <TextBlock Text="SYSTEM STATUS" Style="{StaticResource SectionHeader}"/>
                     <StackPanel x:Name="SystemPanel" Margin="0,0,0,16"/>
 
-                    <TextBlock Text="HÅRDVARU INFO" Style="{StaticResource SectionHeader}" Margin="0,12,0,0"/>
+                    <TextBlock Text="HÅRDVARUINFO" Style="{StaticResource SectionHeader}" Margin="0,12,0,0"/>
                     <ScrollViewer MaxHeight="300" VerticalScrollBarVisibility="Auto">
                         <StackPanel x:Name="HardwarePanel"/>
                     </ScrollViewer>

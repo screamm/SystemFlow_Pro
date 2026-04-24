@@ -9,7 +9,7 @@
     <AssemblyName>SystemFlow-Pro</AssemblyName>
     <AssemblyVersion>1.1.0.0</AssemblyVersion>
     <FileVersion>1.1.0.0</FileVersion>
-    <Version>1.1.0-rc.1</Version>
+    <Version>1.1.0</Version>
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <LangVersion>latest</LangVersion>

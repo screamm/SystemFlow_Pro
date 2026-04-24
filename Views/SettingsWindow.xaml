@@ -177,7 +177,7 @@
                 <!-- 2. Temperaturenhet -->
                 <StackPanel Margin="0,0,0,18">
                     <TextBlock Text="Temperaturenhet" Style="{StaticResource SectionLabel}"/>
-                    <StackPanel Orientation="Horizontal">
+                    <StackPanel Orientation="Horizontal" KeyboardNavigation.TabNavigation="Once">
                         <RadioButton x:Name="CelsiusRadio"
                                      Content="Celsius (°C)"
                                      GroupName="TempUnit"
@@ -185,11 +185,12 @@
                                      TabIndex="2"
                                      IsChecked="{Binding IsCelsius, Mode=TwoWay}"
                                      AutomationProperties.Name="Temperaturenhet Celsius"/>
+                        <!-- FahrenheitRadio: IsChecked mirrors !IsCelsius via GroupName-exclusivity.
+                             TabNavigation="Once" på parent gör att RadioButton-gruppen är ett tab-stop. -->
                         <RadioButton x:Name="FahrenheitRadio"
                                      Content="Fahrenheit (°F)"
                                      GroupName="TempUnit"
                                      Style="{StaticResource DarkRadio}"
-                                     TabIndex="2"
                                      AutomationProperties.Name="Temperaturenhet Fahrenheit"/>
                     </StackPanel>
                 </StackPanel>

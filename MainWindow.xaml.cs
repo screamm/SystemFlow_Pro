@@ -266,9 +266,8 @@ namespace SystemMonitorApp
                     Foreground = (SolidColorBrush)FindResource("TextMutedBrush"),
                     TextWrapping = TextWrapping.Wrap,
                     Margin = new Thickness(0, 12, 0, 0),
-                    Text = "Fläkt-RPM visas inte — moderkortets SuperIO är låst av BIOS.\n" +
-                           "Fix: BIOS → Smart Fan 5 → sätt fläkt-headrar till \"Full Speed\" " +
-                           "eller \"Manual\", spara, starta om. Då kan OS läsa RPM:en."
+                    Text = "Fläkt-RPM ej tillgänglig.\n" +
+                           "Aktivera i BIOS: Smart Fan 5 / Q-Fan / Fan Xpert → \"Manual\" eller \"Full Speed\"."
                 };
                 CpuFansPanel.Children.Add(hint);
             }

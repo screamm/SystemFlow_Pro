@@ -23,13 +23,28 @@ namespace SystemMonitorApp.Services
         {
             try
             {
-                using var http = new HttpClient { Timeout = _timeout };
+                using var http = new HttpClient
+                {
+                    Timeout = _timeout,
+                    // Cap response to 1 MB — prevents memory DoS on malicious/poisoned API response.
+                    MaxResponseContentBufferSize = 1_048_576
+                };
                 http.DefaultRequestHeaders.UserAgent.ParseAdd("SystemFlow-Pro");
                 http.DefaultRequestHeaders.Accept.ParseAdd("application/vnd.github+json");
 
                 var json = await http.GetStringAsync(ReleasesUrl);
                 var release = JsonSerializer.Deserialize<GitHubRelease>(json);
                 if (release == null || string.IsNullOrEmpty(release.TagName)) return null;
+
+                // Only trust https URLs under github.com — defense against MITM or compromised API.
+                if (!string.IsNullOrEmpty(release.HtmlUrl)
+                    && (!Uri.TryCreate(release.HtmlUrl, UriKind.Absolute, out var releaseUri)
+                        || releaseUri.Scheme != Uri.UriSchemeHttps
+                        || !releaseUri.Host.EndsWith("github.com", StringComparison.OrdinalIgnoreCase)))
+                {
+                    Logger.Warn($"UpdateChecker rejected suspicious release URL: {release.HtmlUrl}");
+                    release.HtmlUrl = "https://github.com/screamm/SystemFlow_Pro/releases/latest";
+                }
 
                 var current = Assembly.GetExecutingAssembly().GetName().Version;
                 if (current == null) return null;
