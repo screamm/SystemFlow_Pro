@@ -191,4 +191,4 @@ Third-party libraries (in particular LibreHardwareMonitor MPL 2.0) are listed in
 
 ---
 
-**Developed by David Rydgren · [@screamm](https://github.com/screamm)**
+**Developed by GIT Webb & App Studio · [@screamm](https://github.com/screamm)**
