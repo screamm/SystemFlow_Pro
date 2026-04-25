@@ -19,6 +19,12 @@ settings.local.json
 # Internal dev scripts (not for distribution)
 scripts/
 
+# Plugin / tooling artifacts (visionary-claude, etc.)
+system.md
+
+# Cygwin / Git Bash crash dumps
+*.stackdump
+
 # User-specific files
 *.suo
 *.user

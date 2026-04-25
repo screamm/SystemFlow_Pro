@@ -75,7 +75,7 @@ so we chose admin-by-default rather than a degraded experience.
 | Temperatures | All available sensors with color coding |
 | Fans | CPU / GPU / chassis / pump — RPM or PWM %, properly distinguished |
 | System | OS version, CPU name, core count, active user |
-| Settings | Polling interval, °C/°F, pause on minimize |
+| Settings | Polling interval, °C/°F, pause on minimize, start minimized |
 | Diagnostics | File logger in `%APPDATA%\SystemFlow Pro\logs\` |
 
 ---
@@ -95,12 +95,32 @@ so we chose admin-by-default rather than a degraded experience.
 ## Technical information
 
 - **Framework:** .NET 9, WPF
-- **Hardware reading:** LibreHardwareMonitor 0.9.4 (MPL 2.0)
+- **Hardware reading:** LibreHardwareMonitor 0.9.3 (MPL 2.0) + NVAPI for GPU
 - **Architecture:** MVVM-lite with an extracted service layer
-- **Testing:** 37 xUnit tests (status logic, OS name mapping, FanReading model)
+- **Testing:** 40 xUnit tests (status logic, OS name mapping, FanReading model)
 - **Threading:** Background thread for all hardware reading, UI updates via
   snapshot pattern
 - **Polling:** 2 seconds default (500ms–60s configurable)
+- **Startup time:** ~6-8 seconds (LibreHardwareMonitor enumeration is the main cost)
+
+### What works on every Windows 11 PC
+
+These data sources are **motherboard-agnostic** and work without any BIOS changes:
+
+| Source | Used for | API |
+|--------|----------|-----|
+| CPU MSR (DTS) | Per-core temperature, package temp, package power | LibreHardwareMonitor |
+| NVIDIA NVAPI | GPU fan RPM, GPU temperature, hotspot, memory, power | LibreHardwareMonitor |
+| AMD ADL | AMD GPU equivalents | LibreHardwareMonitor |
+| Performance Counters | CPU load per core, available memory | Win32 PerfCounter |
+| WMI | CPU name, total RAM, OS version | System.Management |
+| S.M.A.R.T. | Storage temperatures | LibreHardwareMonitor |
+
+### What requires BIOS configuration
+
+CPU and chassis fan RPM through SuperIO chips (IT8688E, NCT6798D, etc.)
+requires the BIOS to release PWM control to the OS. See the **Fan RPM is missing**
+section under Troubleshooting below.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) for layer diagrams and
 design decisions.
@@ -115,13 +135,29 @@ click "More info" → "Run anyway". SystemFlow Pro is distributed unsigned as
 open source — SmartScreen does not recognize the publisher until the app has
 enough downloads. The code can be reviewed on GitHub.
 
-**No fans are displayed**
-Not all motherboards expose RPM via LHM/WMI. Start the app as administrator
-for additional sensors. Some GPU fans in zero-RPM mode correctly display "0 RPM".
+**Fan RPM is missing (CPU/chassis fans)**
+This is the most common issue. The motherboard's BIOS often locks the SuperIO
+chip when fan headers are set to "Auto" or "Normal" mode, blocking software
+from reading RPM. The fix lives in BIOS, not the app:
+
+| Vendor | BIOS menu | Setting |
+|--------|-----------|---------|
+| Gigabyte | Smart Fan 5 | Set each fan header to "Manual" or "Full Speed" |
+| ASUS | Q-Fan Control | Set to "Manual"; disable Q-Fan Tuning |
+| MSI | Fan Xpert / Smart Fan Mode | Set to "Customize" or off |
+| ASRock | A-Tuning / Fan Control | Usually open by default |
+
+After saving and rebooting, restart SystemFlow Pro — fan RPM will appear
+automatically in the **CPU COOLING** panel.
+
+GPU fans in zero-RPM mode correctly display "Zero-RPM Mode" and do not
+require any BIOS change — they just spin up automatically when the GPU
+crosses its temperature threshold (~55-60°C).
 
 **Temperatures missing**
 Older CPUs have limited LibreHardwareMonitor support. See
-`%APPDATA%\SystemFlow Pro\logs\app-*.log` for details.
+`%APPDATA%\SystemFlow Pro\logs\hardware-report-*.txt` for details — it
+lists every sensor LHM detected on your system.
 
 **The app freezes or is slow**
 Increase the polling interval in Settings (⚙ in the header) to 5 seconds. Please
