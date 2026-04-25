@@ -72,6 +72,10 @@ namespace SystemMonitorApp.ViewModels
             _ = TickOnceAsync();
         }
 
+        /// <summary>Triggers the hardware diagnostic report write (background, non-blocking).</summary>
+        public void ScheduleBackgroundDiagnostics()
+            => _hardware.WriteDiagnosticReportInBackground();
+
         /// <summary>Re-reads settings and applies changes to the running timer.</summary>
         public void ApplyUpdatedSettings()
         {

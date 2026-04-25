@@ -64,6 +64,13 @@ namespace SystemMonitorApp
             // Reserved for future Loaded-time work.
         }
 
+        /// <summary>
+        /// Triggers hardware diagnostic report writing in the background. Called by App
+        /// after the main window is shown so it doesn't add to perceived startup time.
+        /// </summary>
+        public void ScheduleBackgroundDiagnostics()
+            => _viewModel?.ScheduleBackgroundDiagnostics();
+
         private void OnWindowStateChanged(object? sender, EventArgs e)
         {
             if (_viewModel == null) return;

@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Security.Principal;
@@ -19,7 +20,7 @@ namespace SystemMonitorApp.Services
     /// </summary>
     public sealed class HardwareService : IHardwareService
     {
-        private static readonly EnumerationOptions _wmiOptions = new()
+        private static readonly System.Management.EnumerationOptions _wmiOptions = new()
         {
             Timeout = TimeSpan.FromSeconds(2),
             ReturnImmediately = false
@@ -53,20 +54,86 @@ namespace SystemMonitorApp.Services
                 InitializeCounters();
                 TotalMemoryGB = ReadTotalMemoryGB();
                 HardwareInfoText = BuildHardwareInfoText();
-
-                // Dump full hardware tree for diagnostics — critical for troubleshooting
-                // missing fan/motherboard sensors on unsupported boards.
-                if (_computer != null)
-                {
-                    lock (_computerLock)
-                    {
-                        HardwareDiagnostics.DumpReport(_computer);
-                    }
-                }
             }, ct);
 
             IsInitialized = true;
             Logger.Info($"HardwareService initialized. Admin={IsRunningAsAdmin}, TotalRAM={TotalMemoryGB:F1} GB");
+        }
+
+        /// <summary>
+        /// Writes a full diagnostic report to disk on a background thread. Conditional —
+        /// only runs if the motherboard sub-hardware tree is empty (a real troubleshooting
+        /// case) OR if a report has not been written in the last 24 hours. Safe to call
+        /// after the main window is shown; does not block the UI.
+        /// </summary>
+        public void WriteDiagnosticReportInBackground()
+        {
+            if (_computer == null) return;
+            _ = Task.Run(() =>
+            {
+                try
+                {
+                    if (_disposed || _computer == null) return;
+
+                    bool needsReport = ShouldWriteDiagnosticReport();
+                    if (!needsReport)
+                    {
+                        Logger.Info("Diagnostic report skipped (motherboard sensors present, recent report exists)");
+                        return;
+                    }
+
+                    lock (_computerLock)
+                    {
+                        if (!_disposed && _computer != null)
+                            HardwareDiagnostics.DumpReport(_computer);
+                    }
+                }
+                catch (Exception ex) { Logger.Warn("Background diagnostic dump failed", ex); }
+            });
+        }
+
+        private bool ShouldWriteDiagnosticReport()
+        {
+            // Always write if motherboard tree is empty — user may need it for troubleshooting.
+            bool motherboardEmpty = true;
+            try
+            {
+                lock (_computerLock)
+                {
+                    if (_computer == null) return false;
+                    foreach (var hw in _computer.Hardware)
+                    {
+                        if (hw.HardwareType != HardwareType.Motherboard) continue;
+                        if (hw.SubHardware.Length > 0)
+                        {
+                            motherboardEmpty = false;
+                            break;
+                        }
+                    }
+                }
+            }
+            catch { /* if check fails, default to writing the report */ }
+
+            if (motherboardEmpty) return true;
+
+            // Otherwise only write once per 24h to keep diagnostic history fresh
+            // without hitting the disk on every start.
+            try
+            {
+                var logDir = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
+                    "SystemFlow Pro",
+                    "logs");
+                if (!Directory.Exists(logDir)) return true;
+
+                var newest = new DirectoryInfo(logDir)
+                    .GetFiles("hardware-report-*.txt")
+                    .OrderByDescending(f => f.LastWriteTime)
+                    .FirstOrDefault();
+                if (newest == null) return true;
+                return (DateTime.Now - newest.LastWriteTime) > TimeSpan.FromHours(24);
+            }
+            catch { return true; }
         }
 
         private void InitializeCounters()
@@ -87,17 +154,19 @@ namespace SystemMonitorApp.Services
                     counter.NextValue();
                 _memoryCounter.NextValue();
 
+                // Only enable hardware types we actually display in the UI.
+                // Each disabled type saves ~200-500ms of LHM enumeration time at startup.
                 _computer = new Computer
                 {
-                    IsCpuEnabled = true,
-                    IsGpuEnabled = true,
-                    IsMemoryEnabled = true,
-                    IsMotherboardEnabled = true,
-                    IsControllerEnabled = true,
-                    IsNetworkEnabled = true,
-                    IsStorageEnabled = true,
-                    IsPsuEnabled = true,
-                    IsBatteryEnabled = true
+                    IsCpuEnabled = true,         // Hero card CPU + cooling panel
+                    IsGpuEnabled = true,         // Hero card GPU + cooling panel
+                    IsMemoryEnabled = true,      // Hero card memory
+                    IsMotherboardEnabled = true, // Fan RPM after BIOS Smart Fan 5 → Manual
+                    IsStorageEnabled = true,     // SSD/HDD temperatures in thermal panel
+                    IsControllerEnabled = false, // Not displayed
+                    IsNetworkEnabled = false,    // Not displayed
+                    IsPsuEnabled = false,        // Not displayed
+                    IsBatteryEnabled = false     // Not displayed (laptop only anyway)
                 };
 
                 lock (_computerLock)

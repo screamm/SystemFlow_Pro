@@ -8,7 +8,7 @@ namespace SystemMonitorApp
 {
     public partial class App : Application
     {
-        private const int MinSplashMs = 800;
+        private const int MinSplashMs = 400;
 
         private SplashWindow? _splashWindow;
 
@@ -64,7 +64,8 @@ namespace SystemMonitorApp
 
                 Logger.Info($"Main window shown successfully (total startup {((DateTime.UtcNow - splashStarted).TotalMilliseconds):F0}ms)");
 
-                // Fire-and-forget update check. Non-blocking; failures are silent.
+                // Fire-and-forget tasks AFTER window is shown — these no longer add to startup time.
+                mainWindow.ScheduleBackgroundDiagnostics();
                 _ = CheckForUpdatesInBackground();
             }
             catch (Exception ex)

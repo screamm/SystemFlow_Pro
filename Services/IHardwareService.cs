@@ -35,5 +35,12 @@ namespace SystemMonitorApp.Services
 
         /// <summary>Cached hardware info text (CPU name, OS, user). Never changes after init.</summary>
         string HardwareInfoText { get; }
+
+        /// <summary>
+        /// Writes a hardware diagnostic report to disk on a background thread. Conditional:
+        /// only runs when troubleshooting data would be useful. Safe to call after the
+        /// main window is shown; does not block the UI.
+        /// </summary>
+        void WriteDiagnosticReportInBackground();
     }
 }
